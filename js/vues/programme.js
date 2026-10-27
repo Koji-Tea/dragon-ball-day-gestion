@@ -1,7 +1,7 @@
 "use strict";
 /* ---------- Programme et activités : grille salles × horaires ---------- */
 const ACTIVITY_KINDS=["Conférence","Concert","Dédicaces","Concours cosplay","Quiz / jeu","Atelier","Projection","Tournoi","Animation","Autre"];
-const DEFAULT_ROOMS=["Grande scène","Salle de conférence","Espace dédicaces","Atelier"];
+const DEFAULT_ROOMS=["Grande scène","Espace doublage","Espace dessin","Espace gaming","Espace card game TCG","Zone extérieure","Village des artistes","Zone commerciale","Food truck"];
 const roomsOf=ed=>{const r=String((ed&&ed.rooms)||"").split("\n").map(s=>s.trim()).filter(Boolean);return r.length?r:DEFAULT_ROOMS};
 const edDays=ed=>{if(!ed||!ed.date)return [];const d=[ed.date];if(ed.dateEnd)while(d[d.length-1]<ed.dateEnd&&d.length<10)d.push(addDays(d[d.length-1],1));return d};
 defineMod({
