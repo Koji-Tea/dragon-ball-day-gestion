@@ -67,7 +67,7 @@ function loadDemo(){
    ["Demander l’autorisation de manifestation à la commune","Général",20,"À faire",false],["Commander les t-shirts staff","Bénévoles",90,"À faire",false],["Établir le budget prévisionnel","Finances",-30,"Fait",false]]
    .forEach(([title,pole,dd,status,high])=>put("tasks",{title,pole,due:addDays(t,dd),status,high,editionId:ed.id,doneAt:status==="Fait"?addDays(t,dd):undefined,demo:true}));
   const E=o=>({...o,editionId:ed.id,demo:true}),D=ed.date;
-  const g1=put("guests",E({name:"Kenji Exemple",kind:"Comédien·ne de doublage",status:"Confirmé",arrival:addDays(D,-1),departure:addDays(D,1),fee:1800,contract:true,announced:true,people:1,rider:"Eau plate, loge calme, pas de photos pendant le repas.",signing:"2 sessions de 45 min, 10 CHF la dédicace."}));
+  const g1=put("guests",E({name:"Kenji Exemple",kind:"Comédien·ne de doublage",status:"Confirmé",travel:"Train",arrival:addDays(D,-1),departure:addDays(D,1),fee:1800,contract:true,announced:true,people:1,rider:"Eau plate, loge calme, pas de photos pendant le repas.",signing:"2 sessions de 45 min, 10 CHF la dédicace."}));
   const g2=put("guests",E({name:"Aiko Capsule",kind:"Mangaka / illustrateur·rice",status:"Confirmé",arrival:D,departure:addDays(D,1),fee:900,contract:false,announced:false}));
   const g3=put("guests",E({name:"Groupe Kaméha",kind:"Chanteur·euse",status:"En discussion",fee:2500}));
   put("guests",E({name:"Team Cosplay Namek",kind:"Cosplayeur·euse",status:"Idée"}));

@@ -21,7 +21,8 @@ function fieldHTML(f,o){
   switch(f.type){
     case "textarea":input=`<textarea id="${id}" name="${f.k}" ${req} placeholder="${esc(f.ph||"")}">${esc(v)}</textarea>`;break;
     case "select":input=`<select id="${id}" name="${f.k}" ${req}>${f.blank?`<option value="">${esc(f.blank)}</option>`:""}${(typeof f.options==="function"?f.options():f.options).map(x=>Array.isArray(x)?opt(x[0],x[1],v):opt(x,x,v)).join("")}</select>`;break;
-    case "member":input=`<select id="${id}" name="${f.k}"><option value="">Personne</option>${[...TEAM.values()].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(m=>opt(m.uid,m.name||m.email,v)).join("")}${v&&!TEAM.has(v)?opt(v,v,v):""}</select>`;break;
+    // Un nom libre, ou un membre de l'équipe proposé dans la liste (on garde alors son identifiant).
+    case "member":input=`<input id="${id}" name="${f.k}" list="${id}_l" value="${esc(memberName(v))}" placeholder="Nom de la personne" autocomplete="off"><datalist id="${id}_l">${[...TEAM.values()].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(m=>`<option value="${esc(m.name||m.email)}">`).join("")}</datalist>`;break;
     case "photo":return `<div class="f wide"><span>${esc(f.l)}</span><div class="photo-field"><img id="${id}_img" class="photo-prev" alt="" src="${esc(v)}" ${v?"":"hidden"}><span id="${id}_none" class="avatar photo-none" ${v?"hidden":""}>${ic("people")}</span>
       <input type="hidden" id="${id}" name="${f.k}" value="${esc(v)}"><div class="row"><label class="btn sm" for="${id}_file">${ic("upload")}${v?"Changer":"Choisir une photo"}</label><input id="${id}_file" type="file" accept="image/*" data-change="photo" data-target="${id}" hidden>
       <button type="button" class="btn sm ghost" data-act="photoClear" data-target="${id}" ${v?"":"hidden"}>Retirer</button></div></div>${f.help?`<span class="tiny muted" style="font-weight:600">${esc(f.help)}</span>`:""}</div>`;
@@ -38,6 +39,7 @@ function readForm(mod,form){
   mod.fields.forEach(f=>{
     if(f.type==="check")o[f.k]=fd.has(f.k);
     else if(f.type==="checks")o[f.k]=fd.getAll(f.k);
+    else if(f.type==="member"){const v=String(fd.get(f.k)||"").trim(),m=[...TEAM.values()].find(m=>norm(m.name||m.email)===norm(v));o[f.k]=m?m.uid:v}
     else if(f.type==="money"||f.type==="number"){const v=fd.get(f.k);o[f.k]=v===""||v==null?null:+v}
     else o[f.k]=String(fd.get(f.k)??"").trim();
   });
