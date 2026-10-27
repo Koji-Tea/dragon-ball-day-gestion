@@ -1,7 +1,7 @@
 "use strict";
 /* ---------- Sponsors, partenaires et fournisseurs ---------- */
 const SPONSOR_KINDS=["Sponsor","Partenaire","Média","Institution / subvention"];
-const SPONSOR_LEVELS=["Pack Goku","Pack Vegeta","Pack Bulma"];
+const SPONSOR_LEVELS=["Pack Goku","Pack Vegeta","Pack Bulma","Autre"];
 const SPONSOR_STATES=["Prospect","Contacté","En discussion","Signé","Payé","Refusé"];
 const SPONSOR_PILL={"Payé":"good","Signé":"info","En discussion":"warn","Refusé":"bad"};
 defineMod({

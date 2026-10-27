@@ -34,12 +34,12 @@ defineMod({
   fields:[
     {k:"name",l:"Nom du stand ou de l’artiste",req:true,wide:true},
     {k:"spot",l:"N° d’emplacement",ph:"ex. 12 ou A12"},
+    {k:"tables",l:"Nombre de tables réservées",type:"number",ph:"ex. 2"},
     {k:"kind",l:"Type",type:"select",options:EXHIB_KINDS,def:"Exposant"},
     {k:"status",l:"Statut",type:"select",options:EXHIB_STATES,def:"Candidature"},
     {k:"contactName",l:"Personne de contact"},
     {k:"email",l:"E-mail",type:"email"},
     {k:"phone",l:"Téléphone",type:"tel"},
-    {k:"tables",l:"Tables",type:"number"},
     {k:"fee",l:"Prix du stand",type:"money",help:"Ce que le stand paie à l’association."},
     {k:"power",l:"Besoin d’électricité",type:"check"},
     {k:"products",l:"Ce qui est vendu ou présenté",type:"textarea",wide:true},
@@ -86,7 +86,7 @@ VIEWS.exposants=()=>{
     <div class="kpi"><span class="label">Stands acceptés</span><b>${ok.length}</b><small>${plural(ex.filter(x=>x.status==="Candidature").length,"candidature")} à traiter</small></div>
     <div class="kpi"><span class="label">Sans emplacement</span><b style="color:${ok.some(x=>!x.spot)?"var(--warn)":"inherit"}">${ok.filter(x=>!x.spot).length}</b><small>stands acceptés à placer</small></div>
     <div class="kpi"><span class="label">Recette stands</span><b>${chf(sum(ok,x=>x.fee))}</b><small>${chf(sum(ex.filter(x=>x.status==="Payé"),x=>x.fee))} encaissés</small></div>
-    <div class="kpi"><span class="label">Tables</span><b>${num(sum(ok,x=>x.tables))}</b><small>${ok.filter(x=>x.power).length} avec électricité</small></div></div>
+    <div class="kpi"><span class="label">Tables réservées</span><b>${num(sum(ok,x=>x.tables))}</b><small>${ok.filter(x=>x.power).length} avec électricité</small></div></div>
   ${dup.length?`<div class="banner" style="margin:0;background:var(--bad-bg)"><img alt="" src="${IMG.saiyaman}"><div class="grow small"><b style="color:var(--bad)">Emplacement attribué deux fois</b>${[...new Set(dup.map(x=>x.spot))].map(sp=>`<div>N° ${esc(sp)} : ${esc(dup.filter(x=>norm(x.spot)===norm(sp)).map(x=>x.name).join(", "))}</div>`).join("")}</div></div>`:""}
   <div class="card"><div class="row" style="margin-bottom:10px">${searchBox("Rechercher un exposant ou un n°…")}</div>
     <div class="chips" style="margin-bottom:10px"><button class="chip ${!UI.filter?"on":""}" data-act="filter" data-v="">Tous</button>${EXHIB_KINDS.filter(k=>ex.some(x=>x.kind===k)).map(k=>`<button class="chip ${UI.filter===k?"on":""}" data-act="filter" data-v="${esc(k)}">${esc(k)}</button>`).join("")}</div>
