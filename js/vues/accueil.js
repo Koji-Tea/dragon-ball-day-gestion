@@ -41,7 +41,7 @@ VIEWS.accueil=()=>{
   `<div class="stack">${hero}
   <div class="kpis">
     <a class="kpi" href="#taches"><span class="label">Tâches ouvertes</span><b>${st.open.length}</b><small>${st.late.length?`<span style="color:var(--bad);font-weight:800">${st.late.length} en retard</span>`:"rien en retard"}</small></a>
-    ${canRead("guests")?`<a class="kpi" href="#invites"><span class="label">Invités confirmés</span><b>${inEdition("guests").filter(g=>g.status==="Confirmé").length}</b><small>${plural(inEdition("exhibitors").filter(x=>x.status==="Accepté"||x.status==="Payé").length,"stand")}</small></a>`:""}
+    ${canRead("guests")?`<a class="kpi" href="#invites"><span class="label">Invités confirmés</span><b>${inEdition("guests").filter(g=>g.status==="Confirmé").length}</b><small>${plural(inEdition("exhibitors").filter(x=>x.status==="Accepté"||x.status==="Payé").length,"exposant")}</small></a>`:""}
     ${canRead("ticketing")?(()=>{const t=ticketTotals();return `<a class="kpi" href="#billetterie"><span class="label">Billets vendus</span><b>${num(t.qty)}</b><small>${ed.goal?Math.round(t.qty/ed.goal*100)+" % de l’objectif ("+num(ed.goal)+")":"objectif à définir"}</small></a>`})():""}
     ${canRead("budget")?(()=>{const L=ledger(),v=sum(L.filter(l=>l.kind==="Recette"),l=>l.amount)-sum(L.filter(l=>l.kind==="Dépense"),l=>l.amount);return `<a class="kpi" href="#budget"><span class="label">Résultat engagé</span><b style="color:${v<0?"var(--bad)":"var(--good)"}">${v>0?"+":""}${chf(v)}</b><small>recettes − dépenses</small></a>`})():""}
   </div>

@@ -33,7 +33,7 @@ const COLS={
   ticketing:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
 };
 /* Modules qu'on peut confier à un·e responsable de pôle. */
-const DELEGABLE=[["invites","Invités, artistes & exposants"],["logistique","Logement & transport"],["programme","Programme & activités"],["benevoles","Bénévoles"],
+const DELEGABLE=[["invites","Invités & exposants"],["logistique","Logement & transport"],["programme","Programme & activités"],["benevoles","Bénévoles"],
   ["sponsors","Sponsors & partenaires"],["fournisseurs","Fournisseurs"],["contacts","Contacts"],["finances","Budget & billetterie"],["membres","Membres & cotisations"]];
 
 let ME={uid:"local",name:"",email:"",role:"admin",modules:[]};
@@ -167,4 +167,5 @@ async function createMember({email,name,role,modules}){
   await DB.doc("users/"+uidNew).set({email,name,role,modules:modules||[]});
   return uidNew;
 }
-const memberName=u=>{const m=TEAM.get(u);return m?(m.name||m.email):""};
+// Un membre de l'équipe (identifiant) ou un nom écrit à la main.
+const memberName=u=>{if(!u)return "";const m=TEAM.get(u);return m?(m.name||m.email):u};
