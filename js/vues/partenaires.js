@@ -20,7 +20,8 @@ defineMod({
     {k:"logo",l:"Logo reçu",type:"check"},
     {k:"inKind",l:"Ce qui est offert en nature",type:"textarea"},
     {k:"perks",l:"Contreparties promises",type:"textarea",ph:"Logo sur l’affiche, stand, annonces sur scène, billets…"},
-    {k:"invoice",l:"Facture (PDF)",type:"file",accept:"application/pdf",help:"700 Ko au plus."},
+    docField("invoice","Facture"),
+    docField("contractFile","Contrat de partenariat"),
     {k:"notes",l:"Notes",type:"textarea",wide:true},
   ],
 });
@@ -41,6 +42,7 @@ defineMod({
     {k:"due",l:"Échéance de paiement",type:"date"},
     {k:"contactId",l:"Contact",type:"select",blank:"Aucun",options:refOpts("contacts")},
     {k:"owner",l:"Suivi par",type:"member"},
+    docField("invoice","Devis ou facture"),
     {k:"notes",l:"Notes",type:"textarea",wide:true,ph:"Conditions, horaires de livraison, numéro de devis…"},
   ],
 });

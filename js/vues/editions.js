@@ -14,6 +14,7 @@ defineMod({
     {k:"budget",l:"Budget prévu",type:"money"},
     {k:"ticketFeePct",l:"Frais de billetterie Infomaniak (%)",type:"number",help:"Pour estimer la recette nette (voir ton contrat Infomaniak)."},
     {k:"rooms",l:"Lieux du programme (un par ligne)",type:"textarea",ph:DEFAULT_ROOMS.join("\n")},
+    docField("venueContract","Contrat de location de la salle"),
     {k:"notes",l:"Notes",type:"textarea",ph:"Thème, affiche, idées…"},
   ],
   afterSave:(o,old)=>{if(!old)pickEdition(o.id)},
