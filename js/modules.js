@@ -22,6 +22,9 @@ function fieldHTML(f,o){
     case "textarea":input=`<textarea id="${id}" name="${f.k}" ${req} placeholder="${esc(f.ph||"")}">${esc(v)}</textarea>`;break;
     case "select":input=`<select id="${id}" name="${f.k}" ${req}>${f.blank?`<option value="">${esc(f.blank)}</option>`:""}${(typeof f.options==="function"?f.options():f.options).map(x=>Array.isArray(x)?opt(x[0],x[1],v):opt(x,x,v)).join("")}</select>`;break;
     case "member":input=`<select id="${id}" name="${f.k}"><option value="">Personne</option>${[...TEAM.values()].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(m=>opt(m.uid,m.name||m.email,v)).join("")}${v&&!TEAM.has(v)?opt(v,v,v):""}</select>`;break;
+    case "photo":return `<div class="f wide"><span>${esc(f.l)}</span><div class="photo-field"><img id="${id}_img" class="photo-prev" alt="" src="${esc(v)}" ${v?"":"hidden"}><span id="${id}_none" class="avatar photo-none" ${v?"hidden":""}>${ic("people")}</span>
+      <input type="hidden" id="${id}" name="${f.k}" value="${esc(v)}"><div class="row"><label class="btn sm" for="${id}_file">${ic("upload")}${v?"Changer":"Choisir une photo"}</label><input id="${id}_file" type="file" accept="image/*" data-change="photo" data-target="${id}" hidden>
+      <button type="button" class="btn sm ghost" data-act="photoClear" data-target="${id}" ${v?"":"hidden"}>Retirer</button></div></div>${f.help?`<span class="tiny muted" style="font-weight:600">${esc(f.help)}</span>`:""}</div>`;
     case "check":return `<label class="check ${f.wide?"wide":""}"><input type="checkbox" name="${f.k}" ${v?"checked":""}> ${esc(f.l)}</label>`;
     case "checks":return `<div class="${cls}"><span>${esc(f.l)}</span><div class="checks">${(typeof f.options==="function"?f.options():f.options).map(([k,l])=>`<label class="check"><input type="checkbox" name="${f.k}" value="${esc(k)}" ${(v||[]).includes(k)?"checked":""}> ${esc(l)}</label>`).join("")}</div></div>`;
     case "money":input=`<input id="${id}" name="${f.k}" type="number" step="0.05" inputmode="decimal" value="${esc(v)}" ${req} placeholder="CHF">`;break;
@@ -65,7 +68,7 @@ const addBtn=(key,label,cls="primary")=>canWrite(MODS[key].col)?`<button class="
 // Onglets d'un écran : l'onglet choisi est retenu par écran.
 const tabOf=(view,def)=>UI.tab[view]||def;
 const segTabs=(view,tabs,def)=>`<div class="seg">${tabs.map(([k,l])=>`<button class="${tabOf(view,def)===k?"on":""}" data-act="tab" data-view="${view}" data-v="${k}">${l}</button>`).join("")}</div>`;
-const rowItem=(key,o,{title,sub="",end="",av})=>`<div class="item click" data-act="openRecord" data-mod="${key}" data-id="${o.id}">${av===false?"":`<span class="avatar">${esc(av||initials(title))}</span>`}<div class="main"><b>${esc(title)}</b>${sub?`<span class="small muted">${sub}</span>`:""}</div>${end?`<div class="end">${end}</div>`:""}</div>`;
+const rowItem=(key,o,{title,sub="",end="",av})=>`<div class="item click" data-act="openRecord" data-mod="${key}" data-id="${o.id}">${av===false?"":o.photo?`<img class="avatar" alt="" src="${esc(o.photo)}">`:`<span class="avatar">${esc(av||initials(title))}</span>`}<div class="main"><b>${esc(title)}</b>${sub?`<span class="small muted">${sub}</span>`:""}</div>${end?`<div class="end">${end}</div>`:""}</div>`;
 // Recherche simple sur quelques champs.
 const matchQ=(o,keys)=>{const q=norm(UI.q);return !q||norm(keys.map(k=>o[k]).join(" ")).includes(q)};
 const searchBox=ph=>`<input class="search" type="search" id="q" data-input="search" placeholder="${esc(ph)}" value="${esc(UI.q)}" aria-label="Rechercher">`;
@@ -80,4 +83,24 @@ function exportMod(key,xs,name){
     if(f.type==="select"&&f.options&&typeof f.options==="function"){const x=f.options().find(x=>Array.isArray(x)&&x[0]===v);return x?x[1]:v||""}
     return v??""};
   saveFile(`dragon-ball-day-${name}-${today()}.csv`,csv([m.fields.map(f=>f.l),...xs.map(o=>m.fields.map(f=>val(f,o)))]));
+}
+
+/* Photo d'une fiche : recadrée en carré et compressée dans le navigateur, puis gardée dans la fiche elle-même
+   (quelques dizaines de Ko). Pas besoin de Firebase Storage, qui n'est pas inclus dans l'offre gratuite. */
+function loadPhoto(file,target){
+  if(!/^image\//.test(file.type)){toast("Choisis un fichier image (JPG, PNG…).","freezer");return}
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{
+    const S=320,c=document.createElement("canvas");c.width=c.height=S;const g=c.getContext("2d");
+    const side=Math.min(img.naturalWidth,img.naturalHeight),sx=(img.naturalWidth-side)/2,sy=(img.naturalHeight-side)/2;
+    g.fillStyle="#fff";g.fillRect(0,0,S,S);g.drawImage(img,sx,sy,side,side,0,0,S,S);URL.revokeObjectURL(url);
+    setPhoto(target,c.toDataURL("image/jpeg",0.82));
+  };
+  img.onerror=()=>{URL.revokeObjectURL(url);toast("Cette image n’a pas pu être lue. Essaie en JPG ou PNG.","freezer")};
+  img.src=url;
+}
+function setPhoto(target,data){
+  const h=document.getElementById(target);if(!h)return;h.value=data;
+  const im=document.getElementById(target+"_img"),no=document.getElementById(target+"_none"),rm=h.parentNode.querySelector("[data-act=photoClear]"),lb=h.parentNode.querySelector("label.btn");
+  im.src=data;im.hidden=!data;no.hidden=!!data;rm.hidden=!data;lb.lastChild.textContent=data?"Changer":"Choisir une photo";
 }

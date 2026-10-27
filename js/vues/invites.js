@@ -8,6 +8,7 @@ defineMod({
   titleOf:o=>esc(o.name),
   fields:[
     {k:"name",l:"Nom",req:true,wide:true,ph:"ex. Bernard Minet"},
+    {k:"photo",l:"Photo",type:"photo",help:"Recadrée en carré pour la vignette."},
     {k:"kind",l:"Type",type:"select",options:GUEST_KINDS,def:"Invité d’honneur"},
     {k:"status",l:"Statut",type:"select",options:GUEST_STATES,def:"Idée"},
     {k:"contactId",l:"Contact (agent, manager…)",type:"select",blank:"Aucun",options:refOpts("contacts")},
