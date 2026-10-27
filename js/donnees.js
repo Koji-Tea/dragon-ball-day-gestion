@@ -5,7 +5,7 @@ const ROLES={
   admin:{l:"Administrateur·rice",d:"Tout, y compris l’équipe et les réglages."},
   comite:{l:"Comité",d:"Tous les modules, sans la gestion de l’équipe."},
   tresorier:{l:"Trésorier·ère",d:"Consulte tout, gère le budget, la billetterie, les cotisations et ses tâches."},
-  responsable:{l:"Responsable de pôle",d:"Consulte tout, gère les modules qui lui sont confiés."},
+  responsable:{l:"Accès limité",d:"Voit et gère seulement les menus cochés (plus les tâches et le programme)."},
   benevole:{l:"Bénévole",d:"Voit son planning et le programme de l’édition."},
 };
 const ALL_ROLES=Object.keys(ROLES);
@@ -38,7 +38,9 @@ const DELEGABLE=[["invites","Invités & exposants"],["logistique","Logement & tr
   ["sponsors","Sponsors & partenaires"],["fournisseurs","Fournisseurs"],["contacts","Contacts"],["finances","Budget & billetterie"],["membres","Membres & Guerriers Z"]];
 
 let ME={uid:"local",name:"",email:"",role:"admin",modules:[]};
-const canRead=c=>COLS[c].read.includes(ME.role);
+// Accès limité : seuls les menus cochés sont visibles (les données ouvertes aux bénévoles, comme le programme, restent lisibles).
+const seesModule=m=>!m||ME.role!=="responsable"||(ME.modules||[]).includes(m);
+const canRead=c=>COLS[c].read.includes(ME.role)&&(COLS[c].read.includes("benevole")||seesModule(COLS[c].module));
 const canWrite=c=>COLS[c].write.includes(ME.role)||(ME.role==="responsable"&&COLS[c].module&&(ME.modules||[]).includes(COLS[c].module));
 const isStaff=()=>STAFF.includes(ME.role);
 const isAdmin=()=>ME.role==="admin";
@@ -171,8 +173,8 @@ async function initStore(){
   WAIT=[...cols,"config"];
   if(db){
     DB=db;MODE="cloud";
-    // Un·e bénévole ne lit que ses propres créneaux (la base le vérifie aussi).
-    const src=c=>COLS[c].own&&!isStaff()?DB.collection(c).where(COLS[c].own,"array-contains",(ME.email||"").toLowerCase()):DB.collection(c);
+    // Un·e bénévole (ou un accès limité sans le menu Bénévoles) ne lit que ses propres créneaux (la base le vérifie aussi).
+    const src=c=>COLS[c].own&&!(isStaff()&&seesModule(COLS[c].module))?DB.collection(c).where(COLS[c].own,"array-contains",(ME.email||"").toLowerCase()):DB.collection(c);
     cols.forEach(c=>src(c).onSnapshot(snap=>{S[c]=new Map(snap.docs.map(d=>[d.id,{...d.data(),id:d.id}]));LOADED.add(c);changed()},()=>{LOADED.add(c);changed()}));
     DB.doc("config/main").onSnapshot(s=>{if(s.exists)CFG={...CFG,...s.data()};LOADED.add("config");changed()},()=>{LOADED.add("config");changed()});
     DB.collection("users").onSnapshot(s=>{TEAM=new Map(s.docs.map(d=>[d.id,{...d.data(),uid:d.id}]));changed()},()=>{});

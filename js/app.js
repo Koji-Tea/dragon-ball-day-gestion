@@ -3,7 +3,7 @@
 // [écran, libellé, icône, visible ?, groupe]
 const NAV=[["accueil","Accueil","home",()=>true,""],["taches","Tâches","list",()=>canRead("tasks"),""],
   ["programme","Programme","clock",()=>canRead("activities"),"La convention"],["invites","Invités","mic",()=>canRead("guests"),"La convention"],["exposants","Exposants","store",()=>canRead("exhibitors"),"La convention"],
-  ["logistique","Logement & transport","bed",()=>canRead("lodging"),"La convention"],["benevoles","Bénévoles","heart",()=>canRead("shifts"),"La convention"],
+  ["logistique","Logement & transport","bed",()=>canRead("lodging"),"La convention"],["benevoles","Bénévoles","heart",()=>canRead("shifts")&&(!isStaff()||canRead("volunteers")),"La convention"],
   ["sponsors","Sponsors & partenaires","gift",()=>canRead("sponsors"),"Partenaires"],["fournisseurs","Fournisseurs","truck",()=>canRead("suppliers"),"Partenaires"],
   ["contacts","Contacts","people",()=>canRead("contacts"),"Partenaires"],
   ["budget","Budget & compta","coins",()=>canRead("budget"),"Argent"],["billetterie","Billetterie","ticket",()=>canRead("ticketing"),"Argent"],

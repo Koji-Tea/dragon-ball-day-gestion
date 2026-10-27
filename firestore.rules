@@ -13,6 +13,11 @@ service cloud.firestore {
       return hasProfile() && (role() in ['admin', 'comite']
         || (role() == 'responsable' && module in get(profilePath()).data.get('modules', [])));
     }
+    // Accès limité (rôle responsable) : ne voit que les menus cochés dans sa fiche.
+    function sees(module) {
+      return hasProfile() && (role() in ['admin', 'comite', 'tresorier']
+        || (role() == 'responsable' && module in get(profilePath()).data.get('modules', [])));
+    }
     // Le ou la trésorier·ère gère aussi l'argent : budget, écritures, billetterie et cotisations.
     function managesMoney(module) { return manages(module) || (hasProfile() && role() == 'tresorier'); }
 
@@ -38,12 +43,14 @@ service cloud.firestore {
       allow read: if hasProfile();
       allow write: if isAdmin();
     }
-    // Pièces jointes (factures PDF…) : un fichier par document, moins de 1 Mo, modifiable par qui gère le module de la fiche.
+    // Documents joints (contrats, factures…) : un fichier par document, moins de 1 Mo, lisible par qui voit le module de la fiche,
+    // modifiable par qui le gère (le ou la trésorier·ère aussi pour les finances). module vide : fiche d'édition.
+    function managesFile(module) { return manages(module) || (module == 'finances' && managesMoney(module)); }
     match /files/{id} {
-      allow read: if isStaff();
-      allow create, update: if manages(request.resource.data.module)
+      allow read: if isStaff() && (resource.data.module == '' || sees(resource.data.module));
+      allow create, update: if managesFile(request.resource.data.module)
         && request.resource.data.data is string && request.resource.data.data.size() < 1000000;
-      allow delete: if manages(resource.data.module);
+      allow delete: if managesFile(resource.data.module);
     }
     // Une personne connectée sans rôle peut se signaler ; les admins voient et traitent les demandes.
     match /requests/{uid} {
@@ -56,31 +63,31 @@ service cloud.firestore {
       allow write: if hasProfile() && role() in ['admin', 'comite'];
     }
     match /contacts/{id} {
-      allow read: if isStaff();
+      allow read: if sees('contacts');
       allow write: if manages('contacts');
     }
     match /tasks/{id} {
       allow read, write: if isStaff();
     }
-    match /guests/{id}      { allow read: if isStaff(); allow write: if manages('invites'); }
-    match /exhibitors/{id}  { allow read: if isStaff(); allow write: if manages('invites'); }
-    match /lodging/{id}     { allow read: if isStaff(); allow write: if manages('logistique'); }
-    match /transport/{id}   { allow read: if isStaff(); allow write: if manages('logistique'); }
-    match /sponsors/{id}    { allow read: if isStaff(); allow write: if manages('sponsors'); }
-    match /suppliers/{id}   { allow read: if isStaff(); allow write: if manages('fournisseurs'); }
-    match /volunteers/{id}  { allow read: if isStaff(); allow write: if manages('benevoles'); }
+    match /guests/{id}      { allow read: if sees('invites'); allow write: if manages('invites'); }
+    match /exhibitors/{id}  { allow read: if sees('invites'); allow write: if manages('invites'); }
+    match /lodging/{id}     { allow read: if sees('logistique'); allow write: if manages('logistique'); }
+    match /transport/{id}   { allow read: if sees('logistique'); allow write: if manages('logistique'); }
+    match /sponsors/{id}    { allow read: if sees('sponsors'); allow write: if manages('sponsors'); }
+    match /suppliers/{id}   { allow read: if sees('fournisseurs'); allow write: if manages('fournisseurs'); }
+    match /volunteers/{id}  { allow read: if sees('benevoles'); allow write: if manages('benevoles'); }
     // Le programme est visible par toute l'équipe, bénévoles compris.
     match /activities/{id}  { allow read: if hasProfile(); allow write: if manages('programme'); }
     // Un·e bénévole ne voit que les créneaux où son e-mail figure.
     match /shifts/{id} {
-      allow read: if isStaff()
+      allow read: if sees('benevoles')
         || (hasProfile() && request.auth.token.email in resource.data.get('emails', []));
       allow write: if manages('benevoles');
     }
-    match /members/{id}     { allow read: if isStaff(); allow write: if managesMoney('membres'); }
-    match /warriors/{id}    { allow read: if isStaff(); allow write: if managesMoney('membres'); }
-    match /budget/{id}      { allow read: if isStaff(); allow write: if managesMoney('finances'); }
-    match /entries/{id}     { allow read: if isStaff(); allow write: if managesMoney('finances'); }
-    match /ticketing/{id}   { allow read: if isStaff(); allow write: if managesMoney('finances'); }
+    match /members/{id}     { allow read: if sees('membres'); allow write: if managesMoney('membres'); }
+    match /warriors/{id}    { allow read: if sees('membres'); allow write: if managesMoney('membres'); }
+    match /budget/{id}      { allow read: if sees('finances'); allow write: if managesMoney('finances'); }
+    match /entries/{id}     { allow read: if sees('finances'); allow write: if managesMoney('finances'); }
+    match /ticketing/{id}   { allow read: if sees('finances'); allow write: if managesMoney('finances'); }
   }
 }

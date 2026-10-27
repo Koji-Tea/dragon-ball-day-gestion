@@ -19,6 +19,7 @@ defineMod({
     {k:"fee",l:"Cachet",type:"money",help:"Laisse vide si l’invité vient sans cachet."},
     {k:"feePaid",l:"Cachet payé",type:"check"},
     {k:"contract",l:"Contrat signé",type:"check"},
+    docField("contractFile","Contrat d’artiste"),
     {k:"announced",l:"Annoncé au public",type:"check"},
     {k:"people",l:"Accompagnant·es",type:"number",help:"Nombre de personnes qui viennent avec l’invité."},
     {k:"rider",l:"Besoins (rider)",type:"textarea",ph:"Loge, boissons, régime alimentaire, matériel de scène…"},
@@ -43,6 +44,7 @@ defineMod({
     {k:"fee",l:"Prix du stand",type:"money",help:"Ce que le stand paie à l’association."},
     {k:"power",l:"Besoin d’électricité",type:"check"},
     {k:"products",l:"Ce qui est vendu ou présenté",type:"textarea",wide:true},
+    docField("doc","Contrat ou inscription"),
     {k:"notes",l:"Notes",type:"textarea"},
   ],
 });

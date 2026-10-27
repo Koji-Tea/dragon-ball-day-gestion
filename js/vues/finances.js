@@ -28,6 +28,7 @@ defineMod({
     {k:"paid",l:"Payé / encaissé",type:"check"},
     {k:"method",l:"Moyen",type:"select",options:["Virement","TWINT","Espèces","Carte","Autre"],blank:"–"},
     {k:"ref",l:"N° de facture ou de pièce"},
+    docField("invoice","Facture ou justificatif"),
     {k:"notes",l:"Notes",type:"textarea",wide:true},
   ],
 });

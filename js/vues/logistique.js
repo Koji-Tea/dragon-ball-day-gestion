@@ -17,6 +17,7 @@ defineMod({
     {k:"ref",l:"N° de réservation"},
     {k:"paid",l:"Payé",type:"check"},
     {k:"address",l:"Adresse et contact de l’hôtel",type:"textarea",wide:true},
+    docField("doc","Contrat ou confirmation de réservation"),
     {k:"notes",l:"Notes",type:"textarea",ph:"Petit-déjeuner, parking, arrivée tardive…"},
   ],
 });
@@ -37,6 +38,7 @@ defineMod({
     {k:"cost",l:"Coût",type:"money"},
     {k:"booked",l:"Billet réservé",type:"check"},
     {k:"paid",l:"Payé",type:"check"},
+    docField("doc","Billet ou réservation"),
     {k:"notes",l:"Notes",type:"textarea"},
   ],
 });

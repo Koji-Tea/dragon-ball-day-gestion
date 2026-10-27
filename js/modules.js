@@ -115,20 +115,32 @@ function setPhoto(target,data){
 /* Pièce jointe d'une fiche (ex. facture PDF). Le fichier choisi attend dans PENDING_FILES jusqu'à l'enregistrement de la fiche,
    puis part dans son propre document (voir saveAttachment) : la fiche ne garde que le nom, la taille et l'identifiant. */
 const PENDING_FILES=new Map();
+// Champ « document » des fiches : PDF, photo ou fichier bureautique.
+const DOC_ACCEPT=".pdf,image/*,.doc,.docx,.odt,.xls,.xlsx,.ods,.txt";
+const docField=(k,l)=>({k,l,type:"file",accept:DOC_ACCEPT,wide:true,help:"PDF, photo ou document · 700 Ko au plus (les photos sont réduites automatiquement)."});
 const fileBox=(id,f,m)=>`<input type="hidden" id="${id}" name="${f.k}" value="${esc(m?JSON.stringify(m):"")}">
-  <div class="row">${m?`<button type="button" class="btn sm" data-act="openFile" data-file="${esc(m.fileId)}">${ic("clip")}${esc(m.name)}</button><span class="tiny muted">${fSize(m.size)}</span>`:`<span class="small muted">Aucun fichier</span>`}</div>
+  <div class="row">${m?`<button type="button" class="btn sm" data-act="openFile" data-file="${esc(m.fileId)}" data-type="${esc(m.type||"")}">${ic("clip")}${esc(m.name)}</button><span class="tiny muted">${fSize(m.size)}</span>`:`<span class="small muted">Aucun fichier</span>`}</div>
   <div class="row" style="margin-top:8px"><label class="btn sm" for="${id}_file">${ic("upload")}${m?"Remplacer":"Joindre un fichier"}</label><input id="${id}_file" type="file" accept="${esc(f.accept||"")}" data-change="file" data-target="${id}" data-k="${f.k}" hidden>
   ${m?`<button type="button" class="btn sm ghost" data-act="fileClear" data-target="${id}" data-k="${f.k}">Retirer</button>`:""}</div>`;
 function fileField(target,k){const form=document.getElementById(target).form;return MODS[form.dataset.mod].fields.find(f=>f.k===k)}
 function setFile(target,k,m){document.getElementById(target+"_box").innerHTML=fileBox(target,fileField(target,k),m)}
-function loadFile(file,target,k){
+function loadFile(file,target,k,shrunk){
   const f=fileField(target,k);
   if(f.accept==="application/pdf"&&file.type!=="application/pdf"&&!/\.pdf$/i.test(file.name)){toast("Choisis un fichier PDF.","freezer");return}
+  // Une photo de téléphone dépasse souvent la limite : on la réduit (1600 px, JPEG) avant de l'envoyer.
+  if(/^image\/(jpeg|png|webp|heic)/.test(file.type)&&file.size>FILE_MAX/2&&!shrunk){shrinkImage(file).then(sm=>sm?loadFile(sm,target,k,true):toast("Cette photo n’a pas pu être lue. Essaie en JPG.","freezer"));return}
   if(file.size>FILE_MAX){toast(`Ce fichier fait ${fSize(file.size)} : la limite est de ${fSize(FILE_MAX)}. Compresse-le (ex. ilovepdf.com) puis réessaie.`,"freezer");return}
   const r=new FileReader();
   r.onload=()=>{const m={fileId:uid(),name:file.name,size:file.size,type:file.type||"application/pdf"};PENDING_FILES.set(m.fileId,{...m,data:r.result});setFile(target,k,m)};
   r.onerror=()=>toast("Ce fichier n’a pas pu être lu.","freezer");
   r.readAsDataURL(file);
+}
+function shrinkImage(file){
+  return new Promise(res=>{const url=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{const s=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);
+      const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+      c.toBlob(b=>res(b?new File([b],file.name.replace(/\.[^.]+$/,"")+".jpg",{type:"image/jpeg"}):null),"image/jpeg",0.8)};
+    img.onerror=()=>{URL.revokeObjectURL(url);res(null)};img.src=url});
 }
 // À l'enregistrement : envoie les fichiers choisis, supprime ceux qui ont été remplacés ou retirés.
 function storeFiles(mod,o,old){
@@ -140,7 +152,10 @@ function storeFiles(mod,o,old){
   PENDING_FILES.clear();
 }
 async function openFile(id){
-  const w=window.open("","_blank");
+  // PDF et images s'ouvrent dans un onglet ; les autres documents se téléchargent sous leur nom.
+  const meta=PENDING_FILES.get(id)||document.querySelector(`[data-file="${id}"]`)?.dataset||{};
+  const view=/^(application\/pdf|image\/)/.test(meta.type||"application/pdf");
+  const w=view?window.open("","_blank"):null;
   try{
     const d=PENDING_FILES.get(id)||await loadAttachment(id);if(!d)throw 0;
     const blob=await (await fetch(d.data)).blob(),url=URL.createObjectURL(blob);
