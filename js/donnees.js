@@ -28,13 +28,14 @@ const COLS={
   sponsors:{read:STAFF,write:BOARD,module:"sponsors",perEdition:true},
   suppliers:{read:STAFF,write:BOARD,module:"fournisseurs",perEdition:true},
   members:{read:STAFF,write:MONEY,module:"membres"},
+  warriors:{read:STAFF,write:MONEY,module:"membres"},
   budget:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
   entries:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
   ticketing:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
 };
 /* Modules qu'on peut confier à un·e responsable de pôle. */
 const DELEGABLE=[["invites","Invités & exposants"],["logistique","Logement & transport"],["programme","Programme & activités"],["benevoles","Bénévoles"],
-  ["sponsors","Sponsors & partenaires"],["fournisseurs","Fournisseurs"],["contacts","Contacts"],["finances","Budget & billetterie"],["membres","Membres & cotisations"]];
+  ["sponsors","Sponsors & partenaires"],["fournisseurs","Fournisseurs"],["contacts","Contacts"],["finances","Budget & billetterie"],["membres","Membres & Guerriers Z"]];
 
 let ME={uid:"local",name:"",email:"",role:"admin",modules:[]};
 const canRead=c=>COLS[c].read.includes(ME.role);

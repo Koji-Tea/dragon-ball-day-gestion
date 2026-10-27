@@ -15,7 +15,8 @@ Application de gestion de la convention Dragon Ball Day (association Dragon Ball
 | Contacts | Le carnet d’adresses commun à toutes les éditions |
 | Budget & compta | Prévu, engagé et payé par catégorie ; les montants des autres modules arrivent tout seuls |
 | Billetterie | Import du CSV des ventes Infomaniak (totaux seulement, sans données des acheteurs), ventes par semaine et par tarif, remplissage |
-| Membres | Membres de l’association et cotisations annuelles |
+| Membres | Membres de l’association et leur fonction |
+| Guerriers Z | Membres cotisants et cotisations annuelles |
 
 Construite sur la même base que [Koji Tea – Gestion](https://github.com/Koji-Tea/koji-tea-gestion) : une application web installable (PWA), sans serveur, qui fonctionne aussi hors connexion.
 

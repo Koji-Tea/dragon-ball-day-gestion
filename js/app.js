@@ -7,7 +7,7 @@ const NAV=[["accueil","Accueil","home",()=>true,""],["taches","Tâches","list",(
   ["sponsors","Sponsors & partenaires","gift",()=>canRead("sponsors"),"Partenaires"],["fournisseurs","Fournisseurs","truck",()=>canRead("suppliers"),"Partenaires"],
   ["contacts","Contacts","people",()=>canRead("contacts"),"Partenaires"],
   ["budget","Budget & compta","coins",()=>canRead("budget"),"Argent"],["billetterie","Billetterie","ticket",()=>canRead("ticketing"),"Argent"],
-  ["membres","Membres","id",()=>canRead("members"),"Association"],["editions","Éditions","star",()=>true,"Association"],["reglages","Réglages","gear",()=>true,"Association"]];
+  ["membres","Membres","id",()=>canRead("members"),"Association"],["guerriers","Guerriers Z","bolt",()=>canRead("warriors"),"Association"],["editions","Éditions","star",()=>true,"Association"],["reglages","Réglages","gear",()=>true,"Association"]];
 const TAB=["accueil","taches","programme","benevoles"];
 let route="accueil";
 const navItems=()=>NAV.filter(n=>n[3]());
