@@ -51,5 +51,5 @@ VIEWS.accueil=()=>{
     <div class="card"><h2>Les 7 boules de cristal</h2><p class="small muted" style="margin-top:0">Une boule s’allume à chaque septième des tâches terminées. Toutes réunies : la convention est prête !</p>
       <div class="balls">${[1,2,3,4,5,6,7].map(i=>dragonBall(i,i<=lit)).join("")}</div>
       <p class="small" style="margin-bottom:0"><b>${st.done}</b> tâche${st.done>1?"s":""} terminée${st.done>1?"s":""} sur ${st.all.length}${lit===7?" · Shenron peut apparaître !":""}</p></div>
-  </div>${(()=>{const A=attention();return `<div class="card attn"><h2>Points d’attention</h2>${A.length?`<div class="list">${A.slice(0,10).map(([i,t,h])=>`<a class="item click" href="#${h}"><span class="ic-w">${ic(i)}</span><div class="main"><b>${esc(t)}</b></div></a>`).join("")}</div>`:`<p class="small muted" style="margin:0">Rien ne coince pour l’instant. Kamé Hamé Ha !</p>`}</div>`})()}</div>`;
+  </div>${proposalsCard()}${(()=>{const A=attention();return `<div class="card attn"><h2>Points d’attention</h2>${A.length?`<div class="list">${A.slice(0,10).map(([i,t,h])=>`<a class="item click" href="#${h}"><span class="ic-w">${ic(i)}</span><div class="main"><b>${esc(t)}</b></div></a>`).join("")}</div>`:`<p class="small muted" style="margin:0">Rien ne coince pour l’instant. Kamé Hamé Ha !</p>`}</div>`})()}</div>`;
 };

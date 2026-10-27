@@ -5,7 +5,7 @@ const ROLES={
   admin:{l:"Administrateur·rice",d:"Tout, y compris l’équipe et les réglages."},
   comite:{l:"Comité",d:"Tous les modules, sans la gestion de l’équipe."},
   tresorier:{l:"Trésorier·ère",d:"Consulte tout, gère le budget, la billetterie, les cotisations et ses tâches."},
-  responsable:{l:"Accès limité",d:"Voit et gère seulement les menus cochés (plus les tâches et le programme)."},
+  responsable:{l:"Accès limité",d:"Voit les menus cochés ; ses ajouts et modifications attendent la validation d’un·e admin."},
   benevole:{l:"Bénévole",d:"Voit son planning et le programme de l’édition."},
 };
 const ALL_ROLES=Object.keys(ROLES);
@@ -41,7 +41,9 @@ let ME={uid:"local",name:"",email:"",role:"admin",modules:[]};
 // Accès limité : seuls les menus cochés sont visibles (les données ouvertes aux bénévoles, comme le programme, restent lisibles).
 const seesModule=m=>!m||ME.role!=="responsable"||(ME.modules||[]).includes(m);
 const canRead=c=>COLS[c].read.includes(ME.role)&&(COLS[c].read.includes("benevole")||seesModule(COLS[c].module));
-const canWrite=c=>COLS[c].write.includes(ME.role)||(ME.role==="responsable"&&COLS[c].module&&(ME.modules||[]).includes(COLS[c].module));
+const canWrite=c=>COLS[c].write.includes(ME.role);
+// Accès limité : peut proposer un ajout, une modification ou une suppression dans ses menus ; un·e admin valide (voir demandes.js).
+const canPropose=c=>!canWrite(c)&&ME.role==="responsable"&&!!COLS[c].module&&(ME.modules||[]).includes(COLS[c].module);
 const isStaff=()=>STAFF.includes(ME.role);
 const isAdmin=()=>ME.role==="admin";
 
@@ -49,7 +51,7 @@ const isAdmin=()=>ME.role==="admin";
    Mode « cloud » : Firebase (données partagées par toute l'équipe, disponibles hors connexion).
    Mode « local » : sans configuration Firebase, tout reste dans ce navigateur (pratique pour essayer). */
 let S=Object.fromEntries(Object.keys(COLS).map(c=>[c,new Map()]));
-let TEAM=new Map(),REQUESTS=new Map();
+let TEAM=new Map(),REQUESTS=new Map(),PROPOSALS=new Map();
 let CFG={assoName:"Association Dragon Ball Day",assoAddress:"",website:"https://www.dragonballdays.ch",memberFee:30};
 let MODE="loading",DB=null,LOADED=new Set(),WAIT=[];
 const LSKEY="dbday-data-v1";
@@ -178,6 +180,9 @@ async function initStore(){
     cols.forEach(c=>src(c).onSnapshot(snap=>{S[c]=new Map(snap.docs.map(d=>[d.id,{...d.data(),id:d.id}]));LOADED.add(c);changed()},()=>{LOADED.add(c);changed()}));
     DB.doc("config/main").onSnapshot(s=>{if(s.exists)CFG={...CFG,...s.data()};LOADED.add("config");changed()},()=>{LOADED.add("config");changed()});
     DB.collection("users").onSnapshot(s=>{TEAM=new Map(s.docs.map(d=>[d.id,{...d.data(),uid:d.id}]));changed()},()=>{});
+    // Demandes de modification : l'admin les voit toutes, un accès limité seulement les siennes.
+    if(isAdmin()||ME.role==="responsable")(isAdmin()?DB.collection("proposals"):DB.collection("proposals").where("by","==",ME.uid))
+      .onSnapshot(s=>{PROPOSALS=new Map(s.docs.map(d=>[d.id,{...d.data(),id:d.id}]));changed()},()=>{});
     if(isAdmin())DB.collection("requests").onSnapshot(s=>{REQUESTS=new Map(s.docs.map(d=>[d.id,{...d.data(),uid:d.id}]));changed()},()=>{});
     setTimeout(()=>{WAIT.forEach(c=>LOADED.add(c));changed()},8000);
   }else{

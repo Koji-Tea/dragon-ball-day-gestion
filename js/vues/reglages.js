@@ -82,9 +82,9 @@ function loadDemo(){
   [["Son & Lumière Léman","Sono de la grande scène","Sono & lumière","Commandé",2400,800,addDays(D,-1)],["Imprimerie du Nord","Affiches et flyers","Impression & communication","Payé",650,0,addDays(t,20)],
    ["Location Tables SA","120 tables et 300 chaises","Location de matériel","Devis reçu",900,0,addDays(D,-1)],["Sécurité Plus","4 agents de sécurité","Sécurité","Devis demandé",0,0,D]]
     .forEach(([name,item,cat,status,amount,deposit,delivery])=>put("suppliers",E({name,item,cat,status,amount,deposit,delivery})));
-  [["Ouverture des portes","Animation","Grande scène","09:30","10:00"],["Concert d’ouverture","Concert","Grande scène","10:00","10:45",g3.id],["Doublage : les coulisses","Conférence","Salle de conférence","11:00","12:00",g1.id],
-   ["Dédicaces","Dédicaces","Espace dédicaces","13:30","15:00",g1.id],["Atelier dessin manga","Atelier","Atelier","14:00","15:30",g2.id],["Dédicaces Aiko","Dédicaces","Espace dédicaces","15:30","17:00",g2.id],
-   ["Concours cosplay","Concours cosplay","Grande scène","15:00","16:30"],["Quiz Dragon Ball","Quiz / jeu","Salle de conférence","16:00","17:00"],["Remise des prix","Animation","Grande scène","16:15","17:00"]]
+  [["Ouverture des portes","Animation","Grande scène","09:30","10:00"],["Concert d’ouverture","Concert","Grande scène","10:00","10:45",g3.id],["Doublage : les coulisses","Conférence","Espace doublage","11:00","12:00",g1.id],
+   ["Dédicaces","Dédicaces","Village des artistes","13:30","15:00",g1.id],["Atelier dessin manga","Atelier","Espace dessin","14:00","15:30",g2.id],["Dédicaces Aiko","Dédicaces","Village des artistes","15:30","17:00",g2.id],
+   ["Concours cosplay","Concours cosplay","Grande scène","15:00","16:30"],["Quiz Dragon Ball","Quiz / jeu","Espace gaming","16:00","17:00"],["Remise des prix","Animation","Grande scène","16:15","17:00"]]
     .forEach(([title,kind,room,start,end,guestId])=>put("activities",E({title,kind,room,day:D,start,end,guestId:guestId||"",cost:kind==="Concours cosplay"?300:0,published:true})));
   const vols=[["Léa Exemple","lea@exemple.ch","M"],["Noah Exemple","noah@exemple.ch","L"],["Mia Exemple","mia@exemple.ch","S"],["Luca Exemple","luca@exemple.ch","XL"],["Emma Exemple","emma@exemple.ch","M"]]
     .map(([name,email,size],i)=>put("volunteers",E({name,email,size,status:i<4?"Confirmé·e":"Inscrit·e"})));
