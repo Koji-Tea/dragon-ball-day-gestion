@@ -178,6 +178,9 @@ input[type=checkbox]{width:22px;height:22px;min-height:0;accent-color:var(--oran
 .check{display:flex;align-items:center;gap:10px;font-weight:800}
 .checks{display:flex;flex-wrap:wrap;gap:8px 16px}
 .formfoot{display:flex;justify-content:space-between;gap:10px;margin-top:18px;flex-wrap:wrap}
+/* Dans une feuille, les boutons restent collés en bas : « Enregistrer » est visible même sans faire défiler un long formulaire. */
+.sheet .formfoot{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));z-index:2;background:var(--surface);border-top:1px solid var(--line);
+  margin:18px -18px calc(-18px - env(safe-area-inset-bottom,0px));padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px))}
 
 /* Messages */
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);padding:8px 16px 8px 8px;border-radius:999px;display:flex;align-items:center;gap:10px;font-weight:800;box-shadow:var(--shadow);max-width:calc(100% - 32px);animation:up .2s}
