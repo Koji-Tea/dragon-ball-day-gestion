@@ -9,9 +9,9 @@ service cloud.firestore {
     function role() { return get(profilePath()).data.role; }
     function isAdmin() { return hasProfile() && role() == 'admin'; }
     function isStaff() { return hasProfile() && role() in ['admin', 'comite', 'tresorier', 'responsable']; }
+    // Modifier directement : admin et comité. Un accès limité passe par une demande (proposals) validée par un·e admin.
     function manages(module) {
-      return hasProfile() && (role() in ['admin', 'comite']
-        || (role() == 'responsable' && module in get(profilePath()).data.get('modules', [])));
+      return hasProfile() && role() in ['admin', 'comite'];
     }
     // Accès limité (rôle responsable) : ne voit que les menus cochés dans sa fiche.
     function sees(module) {
@@ -48,9 +48,18 @@ service cloud.firestore {
     function managesFile(module) { return manages(module) || (module == 'finances' && managesMoney(module)); }
     match /files/{id} {
       allow read: if isStaff() && (resource.data.module == '' || sees(resource.data.module));
-      allow create, update: if managesFile(request.resource.data.module)
+      allow create, update: if (managesFile(request.resource.data.module)
+          || (request.method == 'create' && hasProfile() && role() == 'responsable' && sees(request.resource.data.module)))
         && request.resource.data.data is string && request.resource.data.data.size() < 1000000;
       allow delete: if managesFile(resource.data.module);
+    }
+    // Demandes d'un accès limité (ajout, modification, suppression) : l'admin valide ou refuse.
+    match /proposals/{id} {
+      allow create: if hasProfile() && role() == 'responsable' && sees(request.resource.data.module)
+        && request.resource.data.by == request.auth.uid && request.resource.data.status == 'pending';
+      allow read: if isAdmin() || (signedIn() && resource.data.by == request.auth.uid);
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (signedIn() && resource.data.by == request.auth.uid && resource.data.status != 'pending');
     }
     // Une personne connectée sans rôle peut se signaler ; les admins voient et traitent les demandes.
     match /requests/{uid} {

@@ -47,7 +47,7 @@ VIEWS.plus=()=>{const xs=navItems().filter(n=>!tabsShown().includes(n[0]));retur
 const ACT={
   close:closeSheet,
   newRecord:el=>recordSheet(el.dataset.mod),openRecord:el=>recordSheet(el.dataset.mod,el.dataset.id),
-  delRecord:el=>{const m=MODS[el.dataset.mod];del(m.col,el.dataset.id);
+  delRecord:el=>{const m=MODS[el.dataset.mod];if(!canWrite(m.col)){proposeDelete(m,el.dataset.id);closeSheet();return}del(m.col,el.dataset.id);
     // Supprimer une édition supprime aussi tout ce qui lui appartient.
     if(m.col==="editions")Object.keys(COLS).filter(c=>COLS[c].perEdition&&canWrite(c)).forEach(c=>all(c).filter(o=>o.editionId===el.dataset.id).forEach(o=>del(c,o.id)));
     closeSheet();toast("Supprimé.",m.img)},
@@ -58,6 +58,10 @@ const ACT={
   photoClear:el=>setPhoto(el.dataset.target,""),
   openFile:el=>openFile(el.dataset.file),
   fileClear:el=>setFile(el.dataset.target,el.dataset.k,null),
+  openProposal:el=>proposalSheet(el.dataset.id),
+  approveProposal:el=>approveProposal(el.dataset.id),
+  refuseProposal:el=>refuseProposal(el.dataset.id),
+  dismissProposal:el=>dismissProposal(el.dataset.id),
   copyMails:el=>{const v=el.dataset.v;(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("E-mails copiés. Colle-les dans ton message."),()=>openSheet(sheetHead("E-mails à relancer","chichi")+`<textarea readonly style="min-height:140px">${esc(v)}</textarea>`))},
   exportMod:el=>{const k=el.dataset.mod,c=MODS[k].col;exportMod(k,COLS[c].perEdition?inEdition(c):all(c),norm(MODS[k].label).replace(/[^a-z]+/g,"-"))},
   exportProgramme:()=>{const xs=inEdition("activities").sort((a,b)=>(a.day+a.start)<(b.day+b.start)?-1:1);
@@ -80,7 +84,7 @@ const ACT={
     saveFile("dragon-ball-day-contacts-"+today()+".csv",csv(rows))},
 };
 // Actions qui modifient des données : vérifiées avant exécution (la base refuse de toute façon ce que le rôle n'autorise pas).
-const WRITES={toggleTask:"tasks",delRecord:null,ticketManual:"ticketing",delTicketLot:"ticketing",newEdition2027:"editions",loadDemo:"admin",clearDemo:"admin",newMember:"admin",editMember:"admin",grantRequest:"admin",removeMember:"admin"};
+const WRITES={approveProposal:"admin",refuseProposal:"admin",toggleTask:"tasks",delRecord:null,ticketManual:"ticketing",delTicketLot:"ticketing",newEdition2027:"editions",loadDemo:"admin",clearDemo:"admin",newMember:"admin",editMember:"admin",grantRequest:"admin",removeMember:"admin"};
 document.addEventListener("click",e=>{
   const el=e.target.closest("[data-act]");
   if(e.target.classList&&e.target.classList.contains("scrim")){closeSheet();return}
@@ -89,7 +93,7 @@ document.addEventListener("click",e=>{
   if(el.dataset.confirm&&!el.classList.contains("armed")){e.preventDefault();e.stopPropagation();const old=el.innerHTML;el.classList.add("armed");el.textContent=el.dataset.confirm;setTimeout(()=>{if(el.isConnected){el.classList.remove("armed");el.innerHTML=old}},3500);return}
   if(el.tagName!=="A")e.preventDefault();
   const w=a in WRITES?(WRITES[a]||MODS[el.dataset.mod].col):null;
-  if(w&&!(w==="admin"?isAdmin():canWrite(w))){toast("Ton rôle ne permet pas cette action.","freezer");return}
+  if(w&&!(w==="admin"?isAdmin():canWrite(w)||(a==="delRecord"&&canPropose(w)))){toast("Ton rôle ne permet pas cette action.","freezer");return}
   ACT[a](el,e);
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
@@ -106,7 +110,7 @@ document.addEventListener("change",e=>{
 document.addEventListener("submit",e=>{
   const f=e.target;if(f.id==="loginForm")return;e.preventDefault();
   const kind=f.dataset.submit;
-  if(kind==="record"){const m=MODS[f.dataset.mod];if(!canWrite(m.col)){toast("Ton rôle ne permet pas cette modification.","freezer");return}saveRecord(f.dataset.mod,f)}
+  if(kind==="record"){const m=MODS[f.dataset.mod];if(!canWrite(m.col)&&!canPropose(m.col)){toast("Ton rôle ne permet pas cette modification.","freezer");return}saveRecord(f.dataset.mod,f)}
   if(kind==="member"&&isAdmin())saveMember(f);
   if(kind==="settings"&&isAdmin()){const d=Object.fromEntries(new FormData(f));putCfg({assoName:d.assoName.trim(),assoAddress:d.assoAddress.trim(),website:d.website.trim(),memberFee:+d.memberFee||0});toast("Réglages enregistrés.","bulma")}
   if(kind==="ticketImport"&&canWrite("ticketing"))saveTicketImport(f);

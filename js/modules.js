@@ -51,18 +51,20 @@ function readForm(mod,form){
 }
 function recordSheet(key,id,preset={}){
   const mod=MODS[key];const o=id?get(mod.col,id):{...preset};if(id&&!o)return;
-  const ro=!canWrite(mod.col);
+  const ro=!canWrite(mod.col)&&!canPropose(mod.col),ask=!canWrite(mod.col)&&!ro;
   openSheet(sheetHead(id?(mod.titleOf?mod.titleOf(o):esc(o.name||mod.one)):mod.newLabel,mod.img)+
     (mod.sheetTop&&id?mod.sheetTop(o):"")+
+    (ask?`<div class="banner" style="margin:0 0 14px"><img alt="" src="${IMG.piccolo}"><div class="grow small">Tes changements seront envoyés à l’administrateur·rice, qui les validera avant qu’ils apparaissent.</div></div>`:"")+
     `<form data-submit="record" data-mod="${key}" data-id="${id||""}"><fieldset style="border:0;padding:0;margin:0" ${ro?"disabled":""}><div class="fields">${mod.fields.map(f=>fieldHTML(f,o)).join("")}</div></fieldset>
     ${o.updatedAt?`<p class="tiny muted" style="margin:12px 0 0">Modifié le ${fDate(o.updatedAt.slice(0,10))}${o.updatedBy?" par "+esc(o.updatedBy):""}</p>`:""}
-    <div class="formfoot">${id&&!ro?`<button type="button" class="btn danger" data-act="delRecord" data-mod="${key}" data-id="${id}" data-confirm="Oui, supprimer">Supprimer</button>`:"<span></span>"}${ro?`<span class="small muted">Lecture seule pour ton rôle.</span>`:`<button class="btn primary">Enregistrer</button>`}</div></form>`);
+    <div class="formfoot">${id&&!ro?`<button type="button" class="btn danger" data-act="delRecord" data-mod="${key}" data-id="${id}" data-confirm="${ask?"Oui, demander":"Oui, supprimer"}">${ask?"Demander la suppression":"Supprimer"}</button>`:"<span></span>"}${ro?`<span class="small muted">Lecture seule pour ton rôle.</span>`:`<button class="btn primary">${ask?"Envoyer pour validation":"Enregistrer"}</button>`}</div></form>`);
 }
 function saveRecord(key,form){
   const mod=MODS[key];const id=form.dataset.id||undefined;const old=id?get(mod.col,id):null;
   let o={...(old||{}),...readForm(mod,form),id,demo:false};
   if(COLS[mod.col].perEdition&&!o.editionId){const e=currentEdition();if(!e){toast("Crée d’abord une édition de la convention.","freezer");return}o.editionId=e.id}
   if(mod.beforeSave)o=mod.beforeSave(o,old);
+  if(!canWrite(mod.col)){proposeRecord(mod,o,old);closeSheet();return}
   storeFiles(mod,o,old);
   const saved=put(mod.col,o);if(mod.afterSave)mod.afterSave(saved,old);closeSheet();toast(old?"Modifications enregistrées.":mod.added||"Enregistré !",mod.img);
 }
@@ -71,7 +73,7 @@ function saveRecord(key,form){
 // Options d'un menu qui pointe vers une autre fiche (ex. l'invité d'une réservation d'hôtel).
 const refOpts=(col,label=o=>o.name)=>()=>(COLS[col].perEdition?inEdition(col):all(col)).slice().sort((a,b)=>String(label(a)).localeCompare(String(label(b)),"fr")).map(o=>[o.id,label(o)]);
 const refName=(col,id)=>{const o=id&&get(col,id);return o?(o.name||o.title||""):""};
-const addBtn=(key,label,cls="primary")=>canWrite(MODS[key].col)?`<button class="btn ${cls}" data-act="newRecord" data-mod="${key}">${ic("plus")}${label}</button>`:"";
+const addBtn=(key,label,cls="primary")=>canWrite(MODS[key].col)||canPropose(MODS[key].col)?`<button class="btn ${cls}" data-act="newRecord" data-mod="${key}">${ic("plus")}${label}</button>`:"";
 // Onglets d'un écran : l'onglet choisi est retenu par écran.
 const tabOf=(view,def)=>UI.tab[view]||def;
 const segTabs=(view,tabs,def)=>`<div class="seg">${tabs.map(([k,l])=>`<button class="${tabOf(view,def)===k?"on":""}" data-act="tab" data-view="${view}" data-v="${k}">${l}</button>`).join("")}</div>`;
@@ -143,11 +145,11 @@ function shrinkImage(file){
     img.onerror=()=>{URL.revokeObjectURL(url);res(null)};img.src=url});
 }
 // À l'enregistrement : envoie les fichiers choisis, supprime ceux qui ont été remplacés ou retirés.
-function storeFiles(mod,o,old){
+function storeFiles(mod,o,old,keepOld){
   mod.fields.filter(f=>f.type==="file").forEach(f=>{
     const nw=o[f.k],od=old&&old[f.k],p=nw&&PENDING_FILES.get(nw.fileId);
     if(p)saveAttachment(nw.fileId,{...p,module:COLS[mod.col].module||"",col:mod.col,recId:o.id||""}).catch(()=>toast(`« ${nw.name} » n’a pas pu être enregistré. Réessaie avec un fichier plus léger.`,"freezer"));
-    if(od&&od.fileId&&(!nw||nw.fileId!==od.fileId))dropAttachment(od.fileId);
+    if(!keepOld&&od&&od.fileId&&(!nw||nw.fileId!==od.fileId))dropAttachment(od.fileId);
   });
   PENDING_FILES.clear();
 }

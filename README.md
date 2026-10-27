@@ -31,7 +31,7 @@ Construite sur la même base que [Koji Tea – Gestion](https://github.com/Koji-
 | Administrateur·rice | Tout, y compris l’équipe et les réglages |
 | Comité | Tous les modules, sans la gestion de l’équipe |
 | Trésorier·ère | Consulte tout, gère le budget, la billetterie, les cotisations et ses tâches |
-| Accès limité | Voit et gère seulement les menus cochés dans sa fiche (plus les tâches et le programme) |
+| Accès limité | Voit les menus cochés dans sa fiche ; ses ajouts, modifications et suppressions attendent la validation d’un·e admin |
 | Bénévole | Voit le programme et ses propres créneaux (repérés par son e-mail) |
 
 Le **premier compte qui se connecte devient administrateur**. Ensuite, l’admin ajoute l’équipe depuis Réglages > Équipe et rôles : la personne reçoit un e-mail pour choisir son mot de passe. Les droits sont vérifiés par la base elle-même (`firestore.rules`), pas seulement par l’interface.
