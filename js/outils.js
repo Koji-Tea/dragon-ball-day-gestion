@@ -49,6 +49,7 @@ const ICON={
  ticket:'<path d="M3.5 7.5h17v3a2 2 0 0 0 0 4v3h-17v-3a2 2 0 0 0 0-4z"/><path d="M14.5 7.5v10" stroke-dasharray="2 2"/>',
  id:'<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16.5c.5-1.8 1.8-2.8 3.5-2.8s3 1 3.5 2.8M14.5 10h4M14.5 13.5h3"/>',
  store:'<path d="M4 9.5 5.5 4h13L20 9.5M4 9.5v10h16v-10M4 9.5c0 1.4 1.2 2.5 2.7 2.5s2.6-1.1 2.6-2.5c0 1.4 1.2 2.5 2.7 2.5s2.7-1.1 2.7-2.5c0 1.4 1.1 2.5 2.6 2.5S20 10.9 20 9.5M10 19.5v-4.5h4v4.5"/>',
+ clip:'<path d="M20 11.5l-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/>',
  upload:'<path d="M12 16V5M7 9.5l5-5 5 5M5 20h14"/>',
  alert:'<path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17v.2"/>',
 };
@@ -76,6 +77,8 @@ function toast(msg,img="goku"){clearTimeout(toastT);$("#toastRoot").innerHTML=`<
 function openSheet(html){$("#sheetRoot").innerHTML=`<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;document.body.style.overflow="hidden";const f=$("#sheetRoot input:not([type=hidden]):not([type=checkbox]),#sheetRoot select");if(f&&window.innerWidth>700)f.focus()}
 function closeSheet(){$("#sheetRoot").innerHTML="";document.body.style.overflow=""}
 const sheetHead=(title,img)=>`<div class="sheet-head"><div class="row" style="flex-wrap:nowrap">${img?`<img alt="" src="${IMG[img]}">`:""}<h2>${title}</h2></div><button type="button" class="x" data-act="close" aria-label="Fermer">×</button></div>`;
+
+const fSize=n=>n>=1048576?(n/1048576).toFixed(1).replace(".",",")+" Mo":Math.max(1,Math.round(n/1024))+" Ko";
 
 const csv=rows=>"﻿"+rows.map(r=>r.map(v=>{v=String(v??"");return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(";")).join("\r\n");
 function saveFile(filename,data){

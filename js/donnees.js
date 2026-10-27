@@ -74,8 +74,22 @@ function put(col,o){
   if(MODE==="cloud")cloudWrite(col,o.id,o);else saveLocal();
   return o;
 }
-function del(col,id){S[col].delete(id);changed();if(MODE==="cloud")cloudWrite(col,id,null);else saveLocal()}
+function del(col,id){filesOf(S[col].get(id)).forEach(f=>dropAttachment(f.fileId));S[col].delete(id);changed();if(MODE==="cloud")cloudWrite(col,id,null);else saveLocal()}
 function putCfg(p){CFG={...CFG,...p};changed();if(MODE==="cloud")enqueue("config/main",()=>DB.doc("config/main").set(clean(CFG)).catch(dbErr));else saveLocal()}
+/* Pièces jointes (factures PDF…) : un document par fichier dans la collection files, lu seulement quand on l'ouvre.
+   Pas besoin de Firebase Storage (absent de l'offre gratuite), mais un document Firestore ne dépasse pas 1 Mo : d'où FILE_MAX. */
+const FILE_MAX=700*1024;
+const fileKey=id=>"dbday-file-"+id;
+const filesOf=o=>Object.values(o||{}).filter(v=>v&&typeof v==="object"&&v.fileId);
+async function saveAttachment(id,doc){
+  if(MODE==="cloud")return DB.doc("files/"+id).set(doc);
+  if(ls(fileKey(id),JSON.stringify(doc))===null)throw new Error("quota");
+}
+async function loadAttachment(id){
+  if(MODE==="cloud"){const s=await DB.doc("files/"+id).get();return s.exists?s.data():null}
+  try{return JSON.parse(ls(fileKey(id))||"null")}catch(e){return null}
+}
+function dropAttachment(id){if(MODE==="cloud")DB.doc("files/"+id).delete().catch(()=>{});else ls(fileKey(id),null)}
 let saveT;
 function saveLocal(){clearTimeout(saveT);saveT=setTimeout(()=>{ls(LSKEY,JSON.stringify({cfg:CFG,data:Object.fromEntries(Object.keys(COLS).map(c=>[c,all(c)]))}))},150)}
 function loadLocal(){try{const j=JSON.parse(ls(LSKEY)||"null");if(!j)return;CFG={...CFG,...j.cfg};Object.keys(COLS).forEach(c=>{S[c]=new Map((j.data[c]||[]).map(o=>[o.id,o]))})}catch(e){}}
