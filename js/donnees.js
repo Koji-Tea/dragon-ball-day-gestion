@@ -108,10 +108,17 @@ async function connect(){
   showLogin(false);
   const profRef=db.doc("users/"+user.uid);
   let prof=null;
-  try{const s=await profRef.get();prof=s.exists?s.data():null}catch(e){prof=null}
+  let profErr=null;try{const s=await profRef.get();prof=s.exists?s.data():null}catch(e){prof=null;profErr=e}
   if(!prof){
     // Le tout premier compte qui se connecte devient administrateur ; les suivants attendent qu'on leur donne un rôle.
-    let setup=true,denied=false;try{setup=(await db.doc("config/setup").get({source:"server"})).exists}catch(e){denied=e&&e.code==="permission-denied"}
+    let setup=true,setupAdmin="",denied=false;try{const d=await db.doc("config/setup").get({source:"server"});setup=d.exists;setupAdmin=setup&&d.data().admin}catch(e){denied=e&&e.code==="permission-denied"}
+    if(profErr&&profErr.code==="permission-denied")denied=true;
+    // Sans réponse de la base (réseau, extension qui bloque Firestore…), on ne peut rien conclure : on le dit au lieu de croire qu'il manque un rôle.
+    if(!denied&&profErr){
+      loginScreen(`<img class="goku" alt="" src="img/freezer.webp"><h2 style="text-align:center">Base injoignable</h2><p class="small" style="text-align:center">Ton compte <b>${esc(user.email)}</b> est bien connecté, mais la base de données ne répond pas (${esc(profErr.code||profErr.message||"erreur inconnue")}). Vérifie la connexion internet ou désactive un bloqueur de publicité pour ce site, puis recharge la page.</p><button type="button" class="btn" id="lgOut">Se déconnecter</button>`);
+      $("#lgOut").onclick=()=>firebase.auth().signOut().then(()=>location.reload());
+      return new Promise(()=>{});
+    }
     // La base refuse même cette lecture : les règles de firestore.rules ne sont pas (encore) publiées dans la console.
     if(denied){
       loginScreen(`<img class="goku" alt="" src="img/freezer.webp"><h2 style="text-align:center">La base refuse l’accès</h2><p class="small" style="text-align:center">Ton compte <b>${esc(user.email)}</b> est bien connecté, mais la base de données n’accepte encore aucune lecture. Publie les règles : Console Firebase &gt; Firestore Database &gt; Règles, colle le contenu du fichier <b>firestore.rules</b> du dépôt, puis Publier. Recharge ensuite cette page.</p><button type="button" class="btn" id="lgOut">Se déconnecter</button>`);
@@ -123,6 +130,10 @@ async function connect(){
       prof={email:user.email,name,role:"admin",modules:[]};
       const b=db.batch();b.set(profRef,prof);b.set(db.doc("config/setup"),{admin:user.uid,at:new Date().toISOString()});
       try{await b.commit()}catch(e){prof=null}
+    }else if(setupAdmin===user.uid){
+      // Le premier administrateur a perdu sa fiche (supprimée ou mal éditée dans la console) : on la recrée.
+      prof={email:user.email,name,role:"admin",modules:[]};
+      try{await profRef.set(prof)}catch(e){prof=null}
     }
     if(!prof){
       db.doc("requests/"+user.uid).set({email:user.email,name,at:new Date().toISOString()}).catch(()=>{});

@@ -24,6 +24,10 @@ service cloud.firestore {
       allow create: if signedIn() && uid == request.auth.uid
         && !exists(/databases/$(database)/documents/config/setup)
         && request.resource.data.role == 'admin';
+      // Le premier administrateur (noté dans config/setup) peut toujours recréer sa propre fiche.
+      allow create, update: if signedIn() && uid == request.auth.uid
+        && get(/databases/$(database)/documents/config/setup).data.admin == request.auth.uid
+        && request.resource.data.role == 'admin';
     }
     match /config/setup {
       allow read: if signedIn();
