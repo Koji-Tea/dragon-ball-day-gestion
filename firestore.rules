@@ -1,0 +1,53 @@
+rules_version = '2';
+// Règles d'accès à la base Dragon Ball Day. À copier dans Console Firebase > Firestore Database > Règles.
+// Elles doivent rester d'accord avec ROLES et COLS dans js/donnees.js.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function profilePath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function hasProfile() { return signedIn() && exists(profilePath()); }
+    function role() { return get(profilePath()).data.role; }
+    function isAdmin() { return hasProfile() && role() == 'admin'; }
+    function isStaff() { return hasProfile() && role() in ['admin', 'comite', 'tresorier', 'responsable']; }
+    function manages(module) {
+      return hasProfile() && (role() in ['admin', 'comite']
+        || (role() == 'responsable' && module in get(profilePath()).data.get('modules', [])));
+    }
+
+    // Équipe : visible par les membres, modifiable par les admins.
+    // Exception : le tout premier compte connecté devient admin (tant que config/setup n'existe pas).
+    match /users/{uid} {
+      allow read: if hasProfile() || (signedIn() && uid == request.auth.uid);
+      allow write: if isAdmin();
+      allow create: if signedIn() && uid == request.auth.uid
+        && !exists(/databases/$(database)/documents/config/setup)
+        && request.resource.data.role == 'admin';
+    }
+    match /config/setup {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    match /config/main {
+      allow read: if hasProfile();
+      allow write: if isAdmin();
+    }
+    // Une personne connectée sans rôle peut se signaler ; les admins voient et traitent les demandes.
+    match /requests/{uid} {
+      allow create, update: if signedIn() && uid == request.auth.uid;
+      allow read, delete: if isAdmin();
+    }
+
+    match /editions/{id} {
+      allow read: if hasProfile();
+      allow write: if hasProfile() && role() in ['admin', 'comite'];
+    }
+    match /contacts/{id} {
+      allow read: if isStaff();
+      allow write: if manages('contacts');
+    }
+    match /tasks/{id} {
+      allow read, write: if isStaff();
+    }
+  }
+}
