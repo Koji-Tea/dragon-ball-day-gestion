@@ -111,7 +111,13 @@ async function connect(){
   try{const s=await profRef.get();prof=s.exists?s.data():null}catch(e){prof=null}
   if(!prof){
     // Le tout premier compte qui se connecte devient administrateur ; les suivants attendent qu'on leur donne un rôle.
-    let setup=true;try{setup=(await db.doc("config/setup").get()).exists}catch(e){}
+    let setup=true,denied=false;try{setup=(await db.doc("config/setup").get({source:"server"})).exists}catch(e){denied=e&&e.code==="permission-denied"}
+    // La base refuse même cette lecture : les règles de firestore.rules ne sont pas (encore) publiées dans la console.
+    if(denied){
+      loginScreen(`<img class="goku" alt="" src="img/freezer.webp"><h2 style="text-align:center">La base refuse l’accès</h2><p class="small" style="text-align:center">Ton compte <b>${esc(user.email)}</b> est bien connecté, mais la base de données n’accepte encore aucune lecture. Publie les règles : Console Firebase &gt; Firestore Database &gt; Règles, colle le contenu du fichier <b>firestore.rules</b> du dépôt, puis Publier. Recharge ensuite cette page.</p><button type="button" class="btn" id="lgOut">Se déconnecter</button>`);
+      $("#lgOut").onclick=()=>firebase.auth().signOut().then(()=>location.reload());
+      return new Promise(()=>{});
+    }
     const name=(user.email||"").split("@")[0];
     if(!setup){
       prof={email:user.email,name,role:"admin",modules:[]};
