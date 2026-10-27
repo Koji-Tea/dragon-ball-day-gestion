@@ -2,10 +2,11 @@
 # Usage : python3 tools/preparer_images.py DOSSIER_DES_ORIGINAUX
 # Le dossier doit contenir logo-dragonballday.png et les dessins (Goku.png, Freezer.png, IMG_9742.PNG…).
 import os,sys
-from PIL import Image,ImageDraw
+from PIL import Image,ImageDraw,ImageFilter
+import numpy as np
 SRC=sys.argv[1]; ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__))); OUT=os.path.join(ROOT,'img')
 os.makedirs(OUT,exist_ok=True)
-PERSOS={'goku':'Goku.png','bulma':'IMG_9742.PNG','piccolo':'IMG_9743.PNG','saiyaman':'IMG_9744.PNG','chichi':'IMG_9745.PNG','trunks':'IMG_9746.PNG','freezer':'Freezer.png'}
+PERSOS={'goku':'Goku-icone.png','bulma':'IMG_9742.PNG','piccolo':'IMG_9743.PNG','saiyaman':'IMG_9744.PNG','chichi':'IMG_9745.PNG','trunks':'IMG_9746.PNG','freezer':'Freezer.png'}
 
 # Zones de fond blanc enfermées dans le dessin (entre les doigts, sous le bras), en fraction de la taille de l'image.
 TROUS={'Goku.png':[(0.279,0.507),(0.707,0.938)],'Goku-icone.png':[(0.279,0.507),(0.707,0.938)]}
@@ -16,7 +17,11 @@ def detourer_fond_blanc(im,trous=()):
     for x,y in [(0,0),(w-1,0),(0,h-1),(w-1,h-1),(w//2,0),(w//2,h-1),(0,h//2),(w-1,h//2)]+[(int(fx*w),int(fy*h)) for fx,fy in trous]:
         if im.getpixel((x,y))[3]>0 and min(im.getpixel((x,y))[:3])>235:
             ImageDraw.floodfill(im,(x,y),(255,255,255,0),thresh=40)
-    return im
+    # Liseré : les pixels clairs collés au fond retiré (anticrénelage du blanc) deviennent transparents.
+    a=np.array(im); vide=Image.fromarray(((a[...,3]==0)*255).astype('uint8')).filter(ImageFilter.MaxFilter(5))
+    bord=(np.array(vide)>0)&(a[...,3]>0)&(a[...,:3].min(axis=2)>170)
+    a[bord,3]=0
+    return Image.fromarray(a)
 
 def recadrer(im,marge=0.02):
     b=im.getchannel('A').point(lambda a:255 if a>16 else 0).getbbox(); im=im.crop(b)
@@ -25,6 +30,7 @@ def recadrer(im,marge=0.02):
 for nom,f in PERSOS.items():
     im=Image.open(os.path.join(SRC,f)).convert('RGBA')
     if im.getpixel((5,5))[3]==255: im=detourer_fond_blanc(im,TROUS.get(f,()))
+    if nom=='goku': im=im.crop((0,0,im.width,int(im.height*0.92)))  # sous le buste, l'ombre noire du dessin est coupée
     im=recadrer(im); im.thumbnail((360,360),Image.LANCZOS)
     im.save(os.path.join(OUT,nom+'.webp'),'WEBP',quality=86,method=6)
 
