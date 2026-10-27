@@ -1,7 +1,19 @@
 "use strict";
 /* ---------- Accueil : compte à rebours, avancement, tâches urgentes ---------- */
-/* Modules prévus aux étapes suivantes, avec leur personnage (voir le document d'architecture). */
-const BIENTOT=[["saiyaman","Invités & artistes"],["chichi","Logement & transport"],["bulma","Fournisseurs & matériel"],["freezer","Budget & comptabilité"],["piccolo","Bénévoles"],["trunks","Programme & activités"],["goku","Billetterie Infomaniak"]];
+/* Points d'attention : ce qui coince dans chaque module, avec un lien pour aller régler. */
+function attention(){
+  const A=[],r=c=>canRead(c)?inEdition(c):null;
+  const g=r("guests");if(g)g.filter(x=>guestTodo(x).length).forEach(x=>A.push(["mic",`${x.name} : ${guestTodo(x).join(", ")} à régler`,"invites"]));
+  const lo=r("lodging");if(lo&&lo.some(l=>l.status==="Option"))A.push(["bed",`${plural(lo.filter(l=>l.status==="Option").length,"chambre en option","réservations en option")} à confirmer`,"logistique"]);
+  const ac=r("activities");if(ac&&isStaff()){const c=conflicts(ac);if(c.length)A.push(["clock",`${plural(c.length,"conflit")} dans le programme`,"programme"])}
+  const sh=r("shifts");if(sh&&isStaff()){const n=sh.filter(s=>(s.volunteerIds||[]).length<(+s.needed||0)).length;if(n)A.push(["heart",`${plural(n,"créneau bénévole incomplet","créneaux bénévoles incomplets")}`,"benevoles"]);
+    if(shiftClashes().length)A.push(["heart","Des bénévoles sont sur deux créneaux en même temps","benevoles"])}
+  const sp=r("sponsors");if(sp){const n=sp.filter(s=>["Prospect","Contacté","En discussion"].includes(s.status)&&s.next&&s.next<=addDays(today(),7)).length;if(n)A.push(["gift",`${plural(n,"sponsor")} à relancer cette semaine`,"sponsors"])}
+  const su=r("suppliers");if(su){const n=su.filter(s=>s.due&&s.status!=="Payé"&&ORDERED.includes(s.status)&&s.due<today()).length;if(n)A.push(["truck",`${plural(n,"facture fournisseur")} en retard de paiement`,"fournisseurs"])}
+  if(canRead("budget")&&r("budget").length){const L=ledger(),B=r("budget");const over=EXP_CATS.filter(c=>{const pl=sum(B.filter(b=>b.cat===c),b=>b.planned);return pl&&sum(L.filter(l=>l.cat===c),l=>l.amount)>pl});if(over.length)A.push(["coins",`Budget dépassé : ${over.join(", ")}`,"budget"])}
+  if(canRead("members")){const y=String(new Date().getFullYear()),n=all("members").filter(m=>m.status!=="Inactif"&&m.assoRole!=="Membre d’honneur"&&!(m.paid||[]).includes(y)).length;if(n)A.push(["id",`${plural(n,"cotisation")} ${y} à encaisser`,"membres"])}
+  return A;
+}
 
 function welcome(){
   if(editions().length)return "";
@@ -12,7 +24,7 @@ VIEWS.accueil=()=>{
   const ed=currentEdition();
   const h=new Date().getHours(),hello=h<5||h>=18?"Bonsoir":"Salut";
   const name=(ME.name||"").split(" ")[0];
-  if(!ed)return head(`${hello}${name?" "+esc(name):""} !`,"Prêt·e pour la prochaine convention ?")+welcome()+soonCard();
+  if(!ed)return head(`${hello}${name?" "+esc(name):""} !`,"Prêt·e pour la prochaine convention ?")+welcome();
   const d=daysTo(ed.date);
   const st=STAFF.includes(ME.role)?taskStats():null;
   // Les 7 boules de cristal : chaque septième des tâches terminées en allume une.
@@ -21,15 +33,17 @@ VIEWS.accueil=()=>{
     <span class="when">${edWhen(ed)}${ed.place?" · "+esc(ed.place):""}${ed.city?", "+esc(ed.city):""}</span>
     <span class="count">${d>0?`J-${d}<small>${d>1?"jours":"jour"}</small>`:d===0?"C’est aujourd’hui !":`Terminé<small>il y a ${plural(-d,"jour")}</small>`}</span></div>
     <img class="mascot" alt="" src="${IMG.goku}"></div>`;
-  if(!st)return head(`${hello}${name?" "+esc(name):""} !`,"Merci de faire partie de l’aventure.")+hero+`<div class="card" style="margin-top:16px">${emptyBox("piccolo","Ton espace bénévole arrive bientôt","Tu y trouveras ton planning, tes postes et les infos pratiques du jour J.")}</div>`;
+  if(!st)return head(`${hello}${name?" "+esc(name):""} !`,"Merci de faire partie de l’aventure.")+`<div class="stack">${hero}
+    <div class="grid g2"><div class="card"><div class="card-head"><h2>Mon planning</h2><a class="btn sm" href="#benevoles">Voir tout</a></div>${myShifts()}</div>
+    <div class="card"><div class="card-head"><h2>Programme</h2><a class="btn sm" href="#programme">Voir la grille</a></div><p class="small muted" style="margin:0">${plural(inEdition("activities").length,"activité")} au programme. Le détail des horaires et des lieux est dans la grille.</p></div></div></div>`;
   const al=[...st.late.map(t=>({t,c:"bad"})),...st.soon.map(t=>({t,c:"warn"}))];
   return head(`${hello}${name?" "+esc(name):""} !`,"Voici où en est la préparation.")+welcome()+
   `<div class="stack">${hero}
   <div class="kpis">
-    <a class="kpi" href="#taches"><span class="label">Tâches ouvertes</span><b>${st.open.length}</b><small>sur ${st.all.length} au total</small></a>
-    <a class="kpi" href="#taches"><span class="label">En retard</span><b style="color:${st.late.length?"var(--bad)":"inherit"}">${st.late.length}</b><small>${st.late.length?"à rattraper":"rien en retard"}</small></a>
-    <a class="kpi" href="#contacts"><span class="label">Contacts</span><b>${all("contacts").length}</b><small>dans le carnet</small></a>
-    <div class="kpi"><span class="label">Visiteurs</span><b>${ed.goal?num(ed.goal):"–"}</b><small>${ed.capacity?"objectif · jauge "+num(ed.capacity):"objectif à définir"}</small></div>
+    <a class="kpi" href="#taches"><span class="label">Tâches ouvertes</span><b>${st.open.length}</b><small>${st.late.length?`<span style="color:var(--bad);font-weight:800">${st.late.length} en retard</span>`:"rien en retard"}</small></a>
+    ${canRead("guests")?`<a class="kpi" href="#invites"><span class="label">Invités confirmés</span><b>${inEdition("guests").filter(g=>g.status==="Confirmé").length}</b><small>${plural(inEdition("exhibitors").filter(x=>x.status==="Accepté"||x.status==="Payé").length,"stand")}</small></a>`:""}
+    ${canRead("ticketing")?(()=>{const t=ticketTotals();return `<a class="kpi" href="#billetterie"><span class="label">Billets vendus</span><b>${num(t.qty)}</b><small>${ed.goal?Math.round(t.qty/ed.goal*100)+" % de l’objectif ("+num(ed.goal)+")":"objectif à définir"}</small></a>`})():""}
+    ${canRead("budget")?(()=>{const L=ledger(),v=sum(L.filter(l=>l.kind==="Recette"),l=>l.amount)-sum(L.filter(l=>l.kind==="Dépense"),l=>l.amount);return `<a class="kpi" href="#budget"><span class="label">Résultat engagé</span><b style="color:${v<0?"var(--bad)":"var(--good)"}">${v>0?"+":""}${chf(v)}</b><small>recettes − dépenses</small></a>`})():""}
   </div>
   <div class="grid g3">
     <div class="card"><div class="card-head"><h2>À faire bientôt</h2><a class="btn sm" href="#taches">Toutes les tâches</a></div>
@@ -37,9 +51,5 @@ VIEWS.accueil=()=>{
     <div class="card"><h2>Les 7 boules de cristal</h2><p class="small muted" style="margin-top:0">Une boule s’allume à chaque septième des tâches terminées. Toutes réunies : la convention est prête !</p>
       <div class="balls">${[1,2,3,4,5,6,7].map(i=>dragonBall(i,i<=lit)).join("")}</div>
       <p class="small" style="margin-bottom:0"><b>${st.done}</b> tâche${st.done>1?"s":""} terminée${st.done>1?"s":""} sur ${st.all.length}${lit===7?" · Shenron peut apparaître !":""}</p></div>
-  </div>${soonCard()}</div>`;
+  </div>${(()=>{const A=attention();return `<div class="card attn"><h2>Points d’attention</h2>${A.length?`<div class="list">${A.slice(0,10).map(([i,t,h])=>`<a class="item click" href="#${h}"><span class="ic-w">${ic(i)}</span><div class="main"><b>${esc(t)}</b></div></a>`).join("")}</div>`:`<p class="small muted" style="margin:0">Rien ne coince pour l’instant. Kamé Hamé Ha !</p>`}</div>`})()}</div>`;
 };
-function soonCard(){
-  return `<div class="card"><h2>Bientôt dans l’application</h2><p class="small muted" style="margin-top:0">Les prochains modules arrivent étape par étape.</p>
-  <div class="soon">${BIENTOT.map(([i,l])=>`<div><img alt="" src="${IMG[i]}">${l}</div>`).join("")}</div></div>`;
-}

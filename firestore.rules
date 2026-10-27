@@ -13,6 +13,8 @@ service cloud.firestore {
       return hasProfile() && (role() in ['admin', 'comite']
         || (role() == 'responsable' && module in get(profilePath()).data.get('modules', [])));
     }
+    // Le ou la trésorier·ère gère aussi l'argent : budget, écritures, billetterie et cotisations.
+    function managesMoney(module) { return manages(module) || (hasProfile() && role() == 'tresorier'); }
 
     // Équipe : visible par les membres, modifiable par les admins.
     // Exception : le tout premier compte connecté devient admin (tant que config/setup n'existe pas).
@@ -49,5 +51,24 @@ service cloud.firestore {
     match /tasks/{id} {
       allow read, write: if isStaff();
     }
+    match /guests/{id}      { allow read: if isStaff(); allow write: if manages('invites'); }
+    match /exhibitors/{id}  { allow read: if isStaff(); allow write: if manages('invites'); }
+    match /lodging/{id}     { allow read: if isStaff(); allow write: if manages('logistique'); }
+    match /transport/{id}   { allow read: if isStaff(); allow write: if manages('logistique'); }
+    match /sponsors/{id}    { allow read: if isStaff(); allow write: if manages('sponsors'); }
+    match /suppliers/{id}   { allow read: if isStaff(); allow write: if manages('fournisseurs'); }
+    match /volunteers/{id}  { allow read: if isStaff(); allow write: if manages('benevoles'); }
+    // Le programme est visible par toute l'équipe, bénévoles compris.
+    match /activities/{id}  { allow read: if hasProfile(); allow write: if manages('programme'); }
+    // Un·e bénévole ne voit que les créneaux où son e-mail figure.
+    match /shifts/{id} {
+      allow read: if isStaff()
+        || (hasProfile() && request.auth.token.email in resource.data.get('emails', []));
+      allow write: if manages('benevoles');
+    }
+    match /members/{id}     { allow read: if isStaff(); allow write: if managesMoney('membres'); }
+    match /budget/{id}      { allow read: if isStaff(); allow write: if managesMoney('finances'); }
+    match /entries/{id}     { allow read: if isStaff(); allow write: if managesMoney('finances'); }
+    match /ticketing/{id}   { allow read: if isStaff(); allow write: if managesMoney('finances'); }
   }
 }

@@ -56,7 +56,7 @@ main{padding-block:16px 110px;padding-left:max(16px,env(safe-area-inset-left,0px
   .side{display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;overflow:auto;padding:18px 14px;border-right:1px solid var(--line);background:var(--surface)}
   .side .logo{display:flex;justify-content:center;padding:2px 0 14px}
   .side .logo img{width:190px}
-  .side a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;text-decoration:none;color:var(--ink);font-weight:800}
+  .side a{display:flex;align-items:center;gap:12px;padding:7px 12px;border-radius:12px;text-decoration:none;color:var(--ink);font-weight:800}
   .side a svg{width:21px;height:21px;color:var(--muted)}
   .side a:hover{background:var(--surface-2)}
   .side a.on{background:var(--surface-2);color:var(--accent)}
@@ -187,3 +187,58 @@ input[type=checkbox]{width:22px;height:22px;min-height:0;accent-color:var(--oran
 #login .card{width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px}
 #login .logo{width:240px;align-self:center}
 #login .goku{width:120px;align-self:center;margin-top:-6px}
+
+/* Navigation groupée */
+.side .grp{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--muted);padding:10px 12px 0}
+.morelist .grp{grid-column:1/-1;margin-top:6px}
+
+/* Tableaux */
+.tbl-wrap{overflow-x:auto;margin-inline:-4px}
+.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
+.tbl th{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:800;padding:6px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl tfoot td{font-weight:800;border-bottom:0}
+.meter-col{width:22%;min-width:70px}
+.meter{display:block;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;background:var(--orange)}
+.meter.over i{background:var(--bad)}
+.meter.big{height:12px;margin-top:4px}
+
+/* Graphique */
+.chart{margin:0}
+.chart svg{width:100%;height:auto;display:block;margin-top:6px}
+.chart .grid-l{stroke:var(--line);stroke-width:1}
+.chart .ax{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.chart .bar-m{fill:var(--orange)}
+.chart .bar:hover .bar-m{fill:var(--accent)}
+.chart .bar:hover rect{fill:var(--surface-2)}
+
+/* Grille du programme */
+.pgrid-wrap{overflow-x:auto;margin-inline:-4px;padding-bottom:4px}
+.pgrid{display:grid;gap:0 6px;min-width:min-content}
+.pg-room{font-family:var(--f-display);font-size:.95rem;padding:4px 6px 8px;position:sticky;top:0;background:var(--surface)}
+.pg-hours{position:relative}
+.pg-hours span{position:absolute;right:6px;transform:translateY(-50%);font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.pg-col{position:relative;border-radius:10px;background-color:var(--bg);background-image:linear-gradient(var(--line) 1px,transparent 1px)}
+.pg-act{position:absolute;left:3px;right:3px;border:0;border-left:4px solid var(--tone);border-radius:8px;background:var(--surface-2);text-align:left;padding:4px 7px;cursor:pointer;overflow:hidden;display:flex;flex-direction:column;gap:1px;font-size:.78rem;color:var(--ink)}
+.pg-act b{font-size:.82rem;line-height:1.2}
+.pg-act span{color:var(--muted)}
+.pg-act:hover{filter:brightness(.97);box-shadow:var(--shadow)}
+.pg-act.short{flex-direction:row;align-items:center;gap:6px;white-space:nowrap}
+.pg-act.short b,.pg-act.short span{overflow:hidden;text-overflow:ellipsis}
+.pg-act.conflict{outline:2px solid var(--bad);outline-offset:-2px}
+
+/* Attention (accueil) */
+.attn .item b{font-weight:800}
+.attn .ic-w{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--warn-bg);color:var(--warn)}
+.attn .ic-w svg{width:17px;height:17px}
+
+@media print{
+  .side,.tabbar,.top,.page-head .row:last-child,.banner,#toastRoot{display:none!important}
+  body{background:#fff;color:#000}
+  .app{display:block}
+  main{padding:0;max-width:none}
+  .card{box-shadow:none;border:0}
+  .pgrid-wrap{overflow:visible}
+}

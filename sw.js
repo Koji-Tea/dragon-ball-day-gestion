@@ -1,8 +1,8 @@
 // Garde l'application disponible hors connexion (les données passent par le cache de Firestore).
 // Changer le numéro de version à chaque mise en ligne pour forcer la mise à jour sur les téléphones.
-const C="dbday-v3";
+const C="dbday-v4";
 const FILES=["./","index.html","css/app.css","firebase-config.js","manifest.webmanifest","icon-192.png","apple-touch-icon.png","favicon.ico",
-  "js/outils.js","js/donnees.js","js/modules.js","js/vues/accueil.js","js/vues/taches.js","js/vues/contacts.js","js/vues/editions.js","js/vues/reglages.js","js/app.js",
+  "js/outils.js","js/donnees.js","js/modules.js","js/vues/accueil.js","js/vues/taches.js","js/vues/contacts.js","js/vues/invites.js","js/vues/logistique.js","js/vues/partenaires.js","js/vues/programme.js","js/vues/benevoles.js","js/vues/membres.js","js/vues/finances.js","js/vues/billetterie.js","js/vues/editions.js","js/vues/reglages.js","js/app.js",
   "img/logo.webp","img/favicon.png","img/goku.webp","img/saiyaman.webp","img/bulma.webp","img/chichi.webp","img/piccolo.webp","img/trunks.webp","img/freezer.webp",
   "vendor/firebase-app-compat.js","vendor/firebase-auth-compat.js","vendor/firebase-firestore-compat.js"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES)));self.skipWaiting()});
