@@ -8,6 +8,7 @@ defineMod({
   titleOf:o=>esc(o.name),
   fields:[
     {k:"name",l:"Prénom et nom",req:true},
+    {k:"photo",l:"Photo",type:"photo",help:"Recadrée en carré pour la vignette."},
     {k:"email",l:"E-mail",type:"email",help:"Le même que son compte : il lui permet de voir son planning."},
     {k:"phone",l:"Téléphone",type:"tel"},
     {k:"status",l:"Statut",type:"select",options:VOL_STATES,def:"Inscrit·e"},

@@ -85,7 +85,7 @@ const noEdition=(t,img)=>head(t,"","",img)+`<div class="card">${emptyBox(img,"Pa
 // Export CSV générique : une colonne par champ du module.
 function exportMod(key,xs,name){
   const m=MODS[key];
-  const val=(f,o)=>{const v=o[f.k];if(f.type==="check")return v?"oui":"";if(f.type==="member")return memberName(v)||"";if(f.type==="ref")return refName(f.col,v)||v||"";if(f.type==="file")return v&&v.name||"";
+  const val=(f,o)=>{const v=o[f.k];if(f.type==="check")return v?"oui":"";if(f.type==="member")return memberName(v)||"";if(f.type==="ref")return refName(f.col,v)||v||"";if(f.type==="file")return v&&v.name||"";if(f.type==="photo")return v?"oui":"";
     if(f.type==="checks"){const op=typeof f.options==="function"?f.options():f.options;return (v||[]).map(k=>(op.find(x=>x[0]===k)||[k,k])[1]).join(", ")}
     if(f.type==="select"&&f.options&&typeof f.options==="function"){const x=f.options().find(x=>Array.isArray(x)&&x[0]===v);return x?x[1]:v||""}
     return v??""};

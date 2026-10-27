@@ -8,6 +8,7 @@ defineMod({
   titleOf:o=>esc(o.name),
   fields:[
     {k:"name",l:"Prénom et nom",req:true},
+    {k:"photo",l:"Photo",type:"photo",help:"Recadrée en carré pour la vignette."},
     {k:"assoRole",l:"Fonction",type:"select",options:ASSO_ROLES,def:"Membre"},
     {k:"email",l:"E-mail",type:"email"},
     {k:"phone",l:"Téléphone",type:"tel"},
