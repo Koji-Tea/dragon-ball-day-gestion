@@ -4,23 +4,42 @@
 const ROLES={
   admin:{l:"Administrateur·rice",d:"Tout, y compris l’équipe et les réglages."},
   comite:{l:"Comité",d:"Tous les modules, sans la gestion de l’équipe."},
-  tresorier:{l:"Trésorier·ère",d:"Consulte tout, gère la comptabilité et ses tâches."},
+  tresorier:{l:"Trésorier·ère",d:"Consulte tout, gère le budget, la billetterie, les cotisations et ses tâches."},
   responsable:{l:"Responsable de pôle",d:"Consulte tout, gère les modules qui lui sont confiés."},
-  benevole:{l:"Bénévole",d:"Voit l’édition et, bientôt, son planning."},
+  benevole:{l:"Bénévole",d:"Voit son planning et le programme de l’édition."},
 };
+const ALL_ROLES=Object.keys(ROLES);
 const STAFF=["admin","comite","tresorier","responsable"];
-/* Collections de données. perEdition : chaque fiche appartient à une édition de la convention. */
+const BOARD=["admin","comite"],MONEY=["admin","comite","tresorier"];
+/* Collections de données.
+   module : pôle qu'on peut confier à un·e responsable. perEdition : chaque fiche appartient à une édition.
+   own : champ (liste d'e-mails) qui permet à un·e bénévole de lire seulement ses propres fiches. */
 const COLS={
-  editions:{read:Object.keys(ROLES),write:["admin","comite"]},
-  contacts:{read:STAFF,write:["admin","comite"],module:"contacts"},
+  editions:{read:ALL_ROLES,write:BOARD},
+  contacts:{read:STAFF,write:BOARD,module:"contacts"},
   tasks:{read:STAFF,write:STAFF,perEdition:true},
+  guests:{read:STAFF,write:BOARD,module:"invites",perEdition:true},
+  exhibitors:{read:STAFF,write:BOARD,module:"invites",perEdition:true},
+  lodging:{read:STAFF,write:BOARD,module:"logistique",perEdition:true},
+  transport:{read:STAFF,write:BOARD,module:"logistique",perEdition:true},
+  activities:{read:ALL_ROLES,write:BOARD,module:"programme",perEdition:true},
+  volunteers:{read:STAFF,write:BOARD,module:"benevoles",perEdition:true},
+  shifts:{read:ALL_ROLES,write:BOARD,module:"benevoles",perEdition:true,own:"emails"},
+  sponsors:{read:STAFF,write:BOARD,module:"sponsors",perEdition:true},
+  suppliers:{read:STAFF,write:BOARD,module:"fournisseurs",perEdition:true},
+  members:{read:STAFF,write:MONEY,module:"membres"},
+  budget:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
+  entries:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
+  ticketing:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
 };
-/* Modules qu'on peut confier à un·e responsable de pôle (la liste grandira avec les étapes suivantes). */
-const DELEGABLE=[["contacts","Contacts"]];
+/* Modules qu'on peut confier à un·e responsable de pôle. */
+const DELEGABLE=[["invites","Invités, artistes & exposants"],["logistique","Logement & transport"],["programme","Programme & activités"],["benevoles","Bénévoles"],
+  ["sponsors","Sponsors & partenaires"],["fournisseurs","Fournisseurs"],["contacts","Contacts"],["finances","Budget & billetterie"],["membres","Membres & cotisations"]];
 
 let ME={uid:"local",name:"",email:"",role:"admin",modules:[]};
 const canRead=c=>COLS[c].read.includes(ME.role);
 const canWrite=c=>COLS[c].write.includes(ME.role)||(ME.role==="responsable"&&COLS[c].module&&(ME.modules||[]).includes(COLS[c].module));
+const isStaff=()=>STAFF.includes(ME.role);
 const isAdmin=()=>ME.role==="admin";
 
 /* ---------- Stockage ----------
@@ -28,7 +47,7 @@ const isAdmin=()=>ME.role==="admin";
    Mode « local » : sans configuration Firebase, tout reste dans ce navigateur (pratique pour essayer). */
 let S=Object.fromEntries(Object.keys(COLS).map(c=>[c,new Map()]));
 let TEAM=new Map(),REQUESTS=new Map();
-let CFG={assoName:"Association Dragon Ball Day",assoAddress:"",website:"https://www.dragonballdays.ch"};
+let CFG={assoName:"Association Dragon Ball Day",assoAddress:"",website:"https://www.dragonballdays.ch",memberFee:30};
 let MODE="loading",DB=null,LOADED=new Set(),WAIT=[];
 const LSKEY="dbday-data-v1";
 const all=c=>[...S[c].values()];
@@ -120,7 +139,9 @@ async function initStore(){
   WAIT=[...cols,"config"];
   if(db){
     DB=db;MODE="cloud";
-    cols.forEach(c=>DB.collection(c).onSnapshot(snap=>{S[c]=new Map(snap.docs.map(d=>[d.id,{...d.data(),id:d.id}]));LOADED.add(c);changed()},()=>{LOADED.add(c);changed()}));
+    // Un·e bénévole ne lit que ses propres créneaux (la base le vérifie aussi).
+    const src=c=>COLS[c].own&&!isStaff()?DB.collection(c).where(COLS[c].own,"array-contains",(ME.email||"").toLowerCase()):DB.collection(c);
+    cols.forEach(c=>src(c).onSnapshot(snap=>{S[c]=new Map(snap.docs.map(d=>[d.id,{...d.data(),id:d.id}]));LOADED.add(c);changed()},()=>{LOADED.add(c);changed()}));
     DB.doc("config/main").onSnapshot(s=>{if(s.exists)CFG={...CFG,...s.data()};LOADED.add("config");changed()},()=>{LOADED.add("config");changed()});
     DB.collection("users").onSnapshot(s=>{TEAM=new Map(s.docs.map(d=>[d.id,{...d.data(),uid:d.id}]));changed()},()=>{});
     if(isAdmin())DB.collection("requests").onSnapshot(s=>{REQUESTS=new Map(s.docs.map(d=>[d.id,{...d.data(),uid:d.id}]));changed()},()=>{});

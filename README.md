@@ -1,6 +1,21 @@
 # Dragon Ball Day – Gestion
 
-Application de gestion de la convention Dragon Ball Day (association Dragon Ball Day, www.dragonballdays.ch) : éditions, tâches, contacts, et bientôt invités, logement, transport, artistes, sponsors, partenaires, programme, fournisseurs, bénévoles, membres, comptabilité et billetterie Infomaniak.
+Application de gestion de la convention Dragon Ball Day (association Dragon Ball Day, www.dragonballdays.ch).
+
+| Module | Ce qu’on y fait |
+| --- | --- |
+| Accueil | Compte à rebours, chiffres clés, points d’attention de tous les modules |
+| Tâches | Rétro-planning par pôle, échéances, les 7 boules de cristal |
+| Programme | Grille lieux × horaires, conflits (même lieu, même invité), export CSV, impression |
+| Invités & exposants | Invités (cachet, contrat, rider, dédicaces) ; artistes, exposants et stands |
+| Logement & transport | Hôtels, trajets, planning des arrivées et départs |
+| Bénévoles | Inscriptions, créneaux par poste, doubles affectations ; chaque bénévole voit son planning |
+| Sponsors & partenaires | Suivi de chaque piste jusqu’au paiement, relances, contreparties, logos |
+| Fournisseurs | Devis, commandes, livraisons, acomptes et paiements |
+| Contacts | Le carnet d’adresses commun à toutes les éditions |
+| Budget & compta | Prévu, engagé et payé par catégorie ; les montants des autres modules arrivent tout seuls |
+| Billetterie | Import du CSV des ventes Infomaniak (totaux seulement, sans données des acheteurs), ventes par semaine et par tarif, remplissage |
+| Membres | Membres de l’association et cotisations annuelles |
 
 Construite sur la même base que [Koji Tea – Gestion](https://github.com/Koji-Tea/koji-tea-gestion) : une application web installable (PWA), sans serveur, qui fonctionne aussi hors connexion.
 
@@ -14,9 +29,9 @@ Construite sur la même base que [Koji Tea – Gestion](https://github.com/Koji-
 | --- | --- |
 | Administrateur·rice | Tout, y compris l’équipe et les réglages |
 | Comité | Tous les modules, sans la gestion de l’équipe |
-| Trésorier·ère | Consulte tout, gère ses tâches (et la comptabilité à l’étape 3) |
+| Trésorier·ère | Consulte tout, gère le budget, la billetterie, les cotisations et ses tâches |
 | Responsable de pôle | Consulte tout, gère les modules qui lui sont confiés |
-| Bénévole | Voit l’édition (et son planning à l’étape 4) |
+| Bénévole | Voit le programme et ses propres créneaux (repérés par son e-mail) |
 
 Le **premier compte qui se connecte devient administrateur**. Ensuite, l’admin ajoute l’équipe depuis Réglages > Équipe et rôles : la personne reçoit un e-mail pour choisir son mot de passe. Les droits sont vérifiés par la base elle-même (`firestore.rules`), pas seulement par l’interface.
 
@@ -28,7 +43,8 @@ css/app.css           les couleurs du logo et la mise en page
 js/outils.js          petits outils, icônes, boules de cristal, personnages
 js/donnees.js         rôles, droits, stockage Firebase / local, équipe
 js/modules.js         moteur de modules : un module = une liste de champs
-js/vues/*.js          un fichier par écran (accueil, tâches, contacts, éditions, réglages)
+js/vues/*.js          un fichier par écran (accueil, tâches, programme, invités, logistique, bénévoles,
+                      partenaires, finances, billetterie, membres, contacts, éditions, réglages)
 js/app.js             navigation et actions
 firestore.rules       règles d’accès (à garder d’accord avec js/donnees.js)
 sw.js                 hors connexion (changer la version à chaque mise en ligne)
@@ -41,7 +57,7 @@ Ajouter un module : le décrire avec `defineMod({...})` (voir `js/vues/contacts.
 
 Chaque fusion dans `main` est publiée automatiquement par GitHub Pages (le fichier `CNAME` donne l’adresse). Penser à changer la version dans `sw.js` pour que les téléphones prennent la nouvelle version.
 
-Une seule fois : mettre la configuration Firebase dans `firebase-config.js` et copier `firestore.rules` dans Console Firebase > Firestore Database > Règles, puis Publier.
+Une seule fois : mettre la configuration Firebase dans `firebase-config.js`. Puis **à chaque fois que `firestore.rules` change** : le copier dans Console Firebase > Firestore Database > Règles, puis Publier.
 
 ## Images
 

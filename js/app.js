@@ -1,8 +1,14 @@
 "use strict";
 /* ---------- Navigation ---------- */
-const NAV=[["accueil","Accueil","home",()=>true],["taches","Tâches","list",()=>canRead("tasks")],["contacts","Contacts","people",()=>canRead("contacts")],
-  ["editions","Éditions","star",()=>true],["reglages","Réglages","gear",()=>true]];
-const TAB=["accueil","taches","contacts"];
+// [écran, libellé, icône, visible ?, groupe]
+const NAV=[["accueil","Accueil","home",()=>true,""],["taches","Tâches","list",()=>canRead("tasks"),""],
+  ["programme","Programme","clock",()=>canRead("activities"),"La convention"],["invites","Invités & exposants","mic",()=>canRead("guests"),"La convention"],
+  ["logistique","Logement & transport","bed",()=>canRead("lodging"),"La convention"],["benevoles","Bénévoles","heart",()=>canRead("shifts"),"La convention"],
+  ["sponsors","Sponsors & partenaires","gift",()=>canRead("sponsors"),"Partenaires"],["fournisseurs","Fournisseurs","truck",()=>canRead("suppliers"),"Partenaires"],
+  ["contacts","Contacts","people",()=>canRead("contacts"),"Partenaires"],
+  ["budget","Budget & compta","coins",()=>canRead("budget"),"Argent"],["billetterie","Billetterie","ticket",()=>canRead("ticketing"),"Argent"],
+  ["membres","Membres","id",()=>canRead("members"),"Association"],["editions","Éditions","star",()=>true,"Association"],["reglages","Réglages","gear",()=>true,"Association"]];
+const TAB=["accueil","taches","programme","benevoles"];
 let route="accueil";
 const navItems=()=>NAV.filter(n=>n[3]());
 function modeLabel(){return MODE==="cloud"?"Données partagées avec toute l’équipe.":MODE==="local"?"Mode essai : données gardées dans ce navigateur uniquement.":"Connexion…"}
@@ -14,16 +20,17 @@ function nav(){
   const eds=editions(),cur=currentEdition();
   $("#side").innerHTML=`<div class="logo"><img alt="Dragon Ball Day" src="${IMG.logo}"></div>`+
     (eds.length>1?`<div class="edsel"><label class="label" for="edSel">Édition</label><select id="edSel" data-change="edition">${eds.map(e=>opt(e.id,e.name,cur&&cur.id)).join("")}</select></div>`:"")+
-    items.map(([k,l,i])=>`<a href="#${k}" class="${route===k?"on":""}">${ic(i)}${l}</a>`).join("")+
+    items.map(([k,l,i,,g],j)=>(g&&g!==(items[j-1]||[])[4]?`<div class="grp">${g}</div>`:"")+`<a href="#${k}" class="${route===k?"on":""}">${ic(i)}${k==="benevoles"&&!isStaff()?"Mon planning":l}</a>`).join("")+
     `<div class="who"><img alt="" src="${IMG.goku}"><span>${MODE==="cloud"?`<b>${esc(ME.name||ME.email)}</b>${esc(ROLES[ME.role].l)}`:esc(modeLabel())}</span></div>`;
-  const tabs=TAB.filter(k=>items.find(n=>n[0]===k));
+  const tabs=tabsShown();
   $("#tabbar").style.gridTemplateColumns=`repeat(${tabs.length+1},1fr)`;
-  $("#tabbar").innerHTML=tabs.map(k=>{const n=NAV.find(x=>x[0]===k);return `<a href="#${k}" class="${route===k?"on":""}"><span class="ic">${ic(n[2])}</span>${n[1]}</a>`}).join("")+
+  $("#tabbar").innerHTML=tabs.map(k=>{const n=NAV.find(x=>x[0]===k);return `<a href="#${k}" class="${route===k?"on":""}"><span class="ic">${ic(n[2])}</span>${k==="benevoles"&&!isStaff()?"Planning":n[1]}</a>`}).join("")+
     `<a href="#plus" class="${!tabs.includes(route)?"on":""}"><span class="ic">${ic("more")}</span>Plus</a>`;
   $("#ttl").textContent=route==="accueil"?(cur?cur.name:"Dragon Ball Day"):lab;
   render();
 }
 window.addEventListener("hashchange",()=>{UI.q="";UI.filter="";nav();window.scrollTo(0,0)});
+const tabsShown=()=>TAB.filter(k=>navItems().find(n=>n[0]===k)).slice(0,3);
 
 let rT;function scheduleRender(){cancelAnimationFrame(rT);rT=requestAnimationFrame(nav)}
 function render(){
@@ -32,16 +39,29 @@ function render(){
   $("#main").innerHTML=(VIEWS[route]||VIEWS.accueil)();
   if(aid){const el=document.getElementById(aid);if(el&&el!==a&&!$("#sheetRoot").contains(el)){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
 }
-VIEWS.plus=()=>head("Plus","")+`<div class="morelist">${navItems().filter(n=>!TAB.includes(n[0])).map(([k,l,i])=>`<a href="#${k}">${ic(i)}${l}</a>`).join("")}</div>
+VIEWS.plus=()=>{const xs=navItems().filter(n=>!tabsShown().includes(n[0]));return head("Plus","")+`<div class="morelist">${xs.map(([k,l,i,,g],j)=>(g&&g!==(xs[j-1]||[])[4]?`<div class="grp label">${g}</div>`:"")+`<a href="#${k}">${ic(i)}${l}</a>`).join("")}</div>
   ${editions().length>1?`<div class="card" style="margin-top:16px"><div class="f"><label for="edSelM">Édition affichée</label><select id="edSelM" data-change="edition">${editions().map(e=>opt(e.id,e.name,(currentEdition()||{}).id)).join("")}</select></div></div>`:""}
-  <div class="banner" style="margin-top:16px"><img alt="" src="${IMG.goku}"><div class="grow small">${MODE==="cloud"?`Connecté·e : <b>${esc(ME.name||ME.email)}</b> · ${esc(ROLES[ME.role].l)}<br>`:""}${modeLabel()}</div></div>`;
+  <div class="banner" style="margin-top:16px"><img alt="" src="${IMG.goku}"><div class="grow small">${MODE==="cloud"?`Connecté·e : <b>${esc(ME.name||ME.email)}</b> · ${esc(ROLES[ME.role].l)}<br>`:""}${modeLabel()}</div></div>`};
 
 /* ---------- Actions ---------- */
 const ACT={
   close:closeSheet,
   newRecord:el=>recordSheet(el.dataset.mod),openRecord:el=>recordSheet(el.dataset.mod,el.dataset.id),
-  delRecord:el=>{const m=MODS[el.dataset.mod];del(m.col,el.dataset.id);if(m.col==="editions")all("tasks").filter(t=>t.editionId===el.dataset.id).forEach(t=>del("tasks",t.id));closeSheet();toast("Supprimé.",m.img)},
+  delRecord:el=>{const m=MODS[el.dataset.mod];del(m.col,el.dataset.id);
+    // Supprimer une édition supprime aussi tout ce qui lui appartient.
+    if(m.col==="editions")Object.keys(COLS).filter(c=>COLS[c].perEdition&&canWrite(c)).forEach(c=>all(c).filter(o=>o.editionId===el.dataset.id).forEach(o=>del(c,o.id)));
+    closeSheet();toast("Supprimé.",m.img)},
   filter:el=>{UI.filter=el.dataset.v;render()},
+  tab:el=>{UI.tab[el.dataset.view]=el.dataset.v;UI.filter="";UI.q="";render()},
+  day:el=>{UI.day=el.dataset.v;render()},
+  print:()=>window.print(),
+  copyMails:el=>{const v=el.dataset.v;(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("E-mails copiés. Colle-les dans ton message."),()=>openSheet(sheetHead("E-mails à relancer","chichi")+`<textarea readonly style="min-height:140px">${esc(v)}</textarea>`))},
+  exportMod:el=>{const k=el.dataset.mod,c=MODS[k].col;exportMod(k,COLS[c].perEdition?inEdition(c):all(c),norm(MODS[k].label).replace(/[^a-z]+/g,"-"))},
+  exportProgramme:()=>{const xs=inEdition("activities").sort((a,b)=>(a.day+a.start)<(b.day+b.start)?-1:1);
+    saveFile("dragon-ball-day-programme-"+today()+".csv",csv([["Jour","Début","Fin","Lieu","Activité","Type","Invité","Description"],...xs.map(a=>[a.day,a.start,a.end,a.room,a.title,a.kind,refName("guests",a.guestId),a.desc])]))},
+  exportLedger:()=>saveFile("dragon-ball-day-compta-"+today()+".csv",csv([["Type","Catégorie","Libellé","Date","Montant","Payé / encaissé"],...ledger().map(l=>[l.kind,l.cat,l.label,l.date,l.amount.toFixed(2),l.paid.toFixed(2)])])),
+  ticketManual:()=>ticketManualSheet(),
+  delTicketLot:el=>{del("ticketing",el.dataset.id);toast("Supprimé.","goku")},
   taskTab:el=>{UI.taskTab=el.dataset.v;render()},
   toggleTask:el=>{const t=get("tasks",el.dataset.id);if(!t)return;const done=t.status!=="Fait";put("tasks",{...t,status:done?"Fait":"À faire",doneAt:done?today():null});if(done)toast("Bien joué ! Une tâche de moins.","trunks")},
   pickEdition:el=>{pickEdition(el.dataset.id);toast("Édition affichée : "+get("editions",el.dataset.id).name)},
@@ -57,7 +77,7 @@ const ACT={
     saveFile("dragon-ball-day-contacts-"+today()+".csv",csv(rows))},
 };
 // Actions qui modifient des données : vérifiées avant exécution (la base refuse de toute façon ce que le rôle n'autorise pas).
-const WRITES={toggleTask:"tasks",delRecord:null,newEdition2027:"editions",loadDemo:"admin",clearDemo:"admin",newMember:"admin",editMember:"admin",grantRequest:"admin",removeMember:"admin"};
+const WRITES={toggleTask:"tasks",delRecord:null,ticketManual:"ticketing",delTicketLot:"ticketing",newEdition2027:"editions",loadDemo:"admin",clearDemo:"admin",newMember:"admin",editMember:"admin",grantRequest:"admin",removeMember:"admin"};
 document.addEventListener("click",e=>{
   const el=e.target.closest("[data-act]");
   if(e.target.classList&&e.target.classList.contains("scrim")){closeSheet();return}
@@ -75,6 +95,7 @@ document.addEventListener("change",e=>{
   const t=e.target,c=t.dataset.change;
   if(c==="edition")pickEdition(t.value);
   if(c==="taskPole"){UI.taskPole=t.value;render()}
+  if(c==="ticketFile"&&t.files[0]&&canWrite("ticketing")){const file=t.files[0],r=new FileReader();r.onload=()=>{let txt=r.result;if(txt.includes("\uFFFD")){const r2=new FileReader();r2.onload=()=>ticketImportSheet(file.name,r2.result);r2.readAsText(file,"windows-1252");return}ticketImportSheet(file.name,txt)};r.readAsText(file);t.value=""}
   if(c==="import"&&t.files[0]){const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(j.app!=="dragon-ball-day"||!j.data)throw 0;Object.keys(COLS).forEach(col=>(j.data[col]||[]).forEach(o=>put(col,o)));if(j.cfg)putCfg(j.cfg);toast("Sauvegarde restaurée.")}catch(err){toast("Ce fichier n’est pas une sauvegarde Dragon Ball Day.","freezer")}};r.readAsText(t.files[0])}
 });
 document.addEventListener("submit",e=>{
@@ -82,7 +103,9 @@ document.addEventListener("submit",e=>{
   const kind=f.dataset.submit;
   if(kind==="record"){const m=MODS[f.dataset.mod];if(!canWrite(m.col)){toast("Ton rôle ne permet pas cette modification.","freezer");return}saveRecord(f.dataset.mod,f)}
   if(kind==="member"&&isAdmin())saveMember(f);
-  if(kind==="settings"&&isAdmin()){const d=Object.fromEntries(new FormData(f));putCfg({assoName:d.assoName.trim(),assoAddress:d.assoAddress.trim(),website:d.website.trim()});toast("Réglages enregistrés.","bulma")}
+  if(kind==="settings"&&isAdmin()){const d=Object.fromEntries(new FormData(f));putCfg({assoName:d.assoName.trim(),assoAddress:d.assoAddress.trim(),website:d.website.trim(),memberFee:+d.memberFee||0});toast("Réglages enregistrés.","bulma")}
+  if(kind==="ticketImport"&&canWrite("ticketing"))saveTicketImport(f);
+  if(kind==="ticketManual"&&canWrite("ticketing"))saveTicketManual(f);
 });
 
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
