@@ -78,6 +78,7 @@ service cloud.firestore {
       allow write: if manages('benevoles');
     }
     match /members/{id}     { allow read: if isStaff(); allow write: if managesMoney('membres'); }
+    match /warriors/{id}    { allow read: if isStaff(); allow write: if managesMoney('membres'); }
     match /budget/{id}      { allow read: if isStaff(); allow write: if managesMoney('finances'); }
     match /entries/{id}     { allow read: if isStaff(); allow write: if managesMoney('finances'); }
     match /ticketing/{id}   { allow read: if isStaff(); allow write: if managesMoney('finances'); }

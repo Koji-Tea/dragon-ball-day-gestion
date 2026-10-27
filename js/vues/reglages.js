@@ -41,7 +41,7 @@ VIEWS.reglages=()=>head("Réglages","L’association, l’équipe et les sauvega
     <div class="f"><label for="cName">Nom</label><input id="cName" name="assoName" value="${esc(CFG.assoName)}"></div>
     <div class="f"><label for="cAddr">Adresse</label><textarea id="cAddr" name="assoAddress">${esc(CFG.assoAddress)}</textarea></div>
     <div class="f"><label for="cWeb">Site internet</label><input id="cWeb" name="website" type="url" value="${esc(CFG.website)}"></div>
-    <div class="f"><label for="cFee">Cotisation annuelle des membres (CHF)</label><input id="cFee" name="memberFee" type="number" step="0.05" value="${esc(CFG.memberFee)}"></div>
+    <div class="f"><label for="cFee">Cotisation annuelle des Guerriers Z (CHF)</label><input id="cFee" name="memberFee" type="number" step="0.05" value="${esc(CFG.memberFee)}"></div>
     ${isAdmin()?`<div><button class="btn primary">Enregistrer</button></div>`:""}</fieldset></form></div>
   ${isAdmin()?teamCard():""}
   ${STAFF.includes(ME.role)?`<div class="card"><h2>Sauvegarde</h2><p class="small muted" style="margin-top:0">${modeLabel()} Exporte une sauvegarde de temps en temps pour la garder au chaud.</p>
@@ -91,8 +91,10 @@ function loadDemo(){
   [["Montage",addDays(D,-1),"14:00","19:00",4,[0,1,3]],["Accueil & billetterie",D,"09:00","13:00",3,[0,2]],["Accueil & billetterie",D,"13:00","17:30",3,[4]],["Bar & restauration",D,"10:00","14:00",2,[1,2]],["Sécurité",D,"09:00","17:30",2,[3]]]
     .forEach(([post,day,start,end,needed,ix])=>{const ids=ix.map(i=>vols[i].id);put("shifts",E({post,day,start,end,needed,volunteerIds:ids,emails:ids.map(id=>get("volunteers",id).email)}))});
   const y=String(new Date().getFullYear());
-  [["Présidente Exemple","Président·e",[y]],["Trésorier Exemple","Trésorier·ère",[y]],["Secrétaire Exemple","Secrétaire",[]],["Membre Exemple","Membre",[String(+y-1)]]]
-    .forEach(([name,assoRole,paid])=>put("members",{name,assoRole,paid,status:"Actif",demo:true}));
+  [["Présidente Exemple","Président·e"],["Trésorier Exemple","Trésorier·ère"],["Secrétaire Exemple","Secrétaire"],["Membre Exemple","Membre"]]
+    .forEach(([name,assoRole])=>put("members",{name,assoRole,status:"Actif",demo:true}));
+  [["Goku Exemple",[y]],["Krilin Exemple",[y]],["Yamcha Exemple",[String(+y-1)]]]
+    .forEach(([name,paid])=>put("warriors",{name,paid,status:"Actif",demo:true}));
   [["Invités & cachets",5000],["Logement",1200],["Transport",400],["Salle & technique",6000],["Fournisseurs & matériel",1500],["Communication",1000],["Programme & activités",800],["Assurances & autorisations",600],
    ["Billetterie",18000],["Sponsors & partenaires",6000],["Stands & exposants",1200],["Bar & restauration",3000]].forEach(([cat,planned])=>put("budget",E({cat,planned})));
   [["Location de La Marive (acompte)","Salle & technique",2000,true],["Assurance RC manifestation","Assurances & autorisations",480,true],["Recette bar (estimation)","Bar & restauration",2500,false]]
