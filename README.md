@@ -32,7 +32,7 @@ js/vues/*.js          un fichier par écran (accueil, tâches, contacts, éditio
 js/app.js             navigation et actions
 firestore.rules       règles d’accès (à garder d’accord avec js/donnees.js)
 sw.js                 hors connexion (changer la version à chaque mise en ligne)
-tools/                préparation des images, création du .zip à envoyer
+tools/                préparation des images
 ```
 
 Ajouter un module : le décrire avec `defineMod({...})` (voir `js/vues/contacts.js`), ajouter sa collection dans `COLS` (`js/donnees.js`) et dans `firestore.rules`, puis une entrée dans `NAV` (`js/app.js`) et dans `sw.js`.
