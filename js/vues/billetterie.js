@@ -1,6 +1,6 @@
 "use strict";
 /* ---------- Billetterie Infomaniak ----------
-   On importe l'export CSV des ventes (Infomaniak Manager > Billetterie > Ventes > Exporter).
+   On importe l'export CSV des ventes (Manager Infomaniak > ta billetterie > Ventes > Billets > Exporter).
    Seuls des totaux par jour et par tarif sont gardés : aucune donnée personnelle des acheteurs n'est enregistrée. */
 function ticketTotals(){return memo("ticketTotals",()=>{
   const ed=currentEdition(),rows=inEdition("ticketing").flatMap(l=>l.rows||[]);
@@ -94,7 +94,7 @@ VIEWS.billetterie=()=>{
     <div class="kpi"><span class="label">Net</span><b>${chf(t.gross-t.fees)}</b><small>pour l’association</small></div></div>
   ${t.qty?`<div class="grid g3"><div class="card">${salesChart(t.rows)}${meter(t.qty,goal,"Objectif de visiteurs")}${meter(t.qty,cap,"Jauge de la salle")}</div>
     <div class="card"><h2>Par tarif</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Tarif</th><th class="n">Billets</th><th class="n">Montant</th></tr></thead><tbody>${t.byTarif.map(x=>`<tr><td>${esc(x.t)}</td><td class="n">${num(x.q)}</td><td class="n">${chf(x.a)}</td></tr>`).join("")}</tbody></table></div></div></div>`
-  :`<div class="card">${emptyBox("goku","Pas encore de ventes","Dans Infomaniak Manager, ouvre ta billetterie, exporte la liste des ventes en CSV, puis importe le fichier ici. Tu peux recommencer chaque semaine : le nouvel import remplace l’ancien.",actions)}</div>`}
+  :`<div class="card">${emptyBox("goku","Pas encore de ventes","Dans le Manager Infomaniak : ouvre ta billetterie, menu Ventes > Billets, bouton « Exporter » (format CSV). Puis clique sur « Importer le CSV » ici. Recommence quand tu veux : le nouvel import remplace l’ancien.",actions)}</div>`}
   ${lots.length?`<div class="card"><h2>Imports et saisies</h2><div class="list">${lots.map(l=>`<div class="item"><div class="main"><b>${esc(l.label)}</b><span class="small muted">${esc(l.source)} · ${fDate((l.createdAt||"").slice(0,10))} · ${plural(sum(l.rows||[],r=>r.q),"billet")} · ${chf(sum(l.rows||[],r=>r.a))}</span></div>${can?`<button class="btn sm danger" data-act="delTicketLot" data-id="${l.id}" data-confirm="Oui, supprimer">Supprimer</button>`:""}</div>`).join("")}</div></div>`:""}
   </div>`;
 };
