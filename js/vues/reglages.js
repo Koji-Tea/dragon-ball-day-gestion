@@ -77,7 +77,7 @@ function loadDemo(){
   put("lodging",E({guestId:g2.id,hotel:"Hôtel du Lac (exemple)",status:"Option",checkIn:D,checkOut:addDays(D,1),rooms:1,price:140}));
   put("transport",E({guestId:g1.id,kind:"Train",date:addDays(D,-1),time:"16:42",from:"Genève Aéroport",to:"Yverdon-les-Bains",cost:42,booked:true}));
   put("transport",E({guestId:g1.id,kind:"Navette de l’équipe",date:addDays(D,-1),time:"17:50",from:"Gare d’Yverdon",to:"Hôtel du Lac",booked:true}));
-  [["Garage Namek SA","Sponsor","Or","Signé",3000,500],["Banque Capsule","Sponsor","Argent","En discussion",1500,0],["Radio Bulles","Média","Soutien","Payé",0,800],["Ville d’Yverdon-les-Bains","Institution / subvention","Principal","Contacté",5000,0]]
+  [["Garage Namek SA","Sponsor","Pack Goku","Signé",3000,500],["Banque Capsule","Sponsor","Pack Vegeta","En discussion",1500,0],["Radio Bulles","Média","Pack Bulma","Payé",0,800],["Ville d’Yverdon-les-Bains","Institution / subvention","","Contacté",5000,0]]
     .forEach(([name,kind,level,status,amount,inKindValue],i)=>put("sponsors",E({name,kind,level,status,amount,inKindValue,logo:status==="Signé",next:i===1?addDays(t,3):""})));
   [["Son & Lumière Léman","Sono de la grande scène","Sono & lumière","Commandé",2400,800,addDays(D,-1)],["Imprimerie du Nord","Affiches et flyers","Impression & communication","Payé",650,0,addDays(t,20)],
    ["Location Tables SA","120 tables et 300 chaises","Location de matériel","Devis reçu",900,0,addDays(D,-1)],["Sécurité Plus","4 agents de sécurité","Sécurité","Devis demandé",0,0,D]]
