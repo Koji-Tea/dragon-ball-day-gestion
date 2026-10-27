@@ -1,6 +1,6 @@
 # Prépare les images de l'application à partir des dessins originaux (très grands PNG).
 # Usage : python3 tools/preparer_images.py DOSSIER_DES_ORIGINAUX
-# Le dossier doit contenir logo-dragonballday.png et les dessins (Goku.png, Freezer.png, IMG_9742.PNG…).
+# Le dossier doit contenir logo-dragonballday.png, les dessins (Goku.png, Freezer.png, IMG_9742.PNG…) et Dragonball-Goku.ico (icône de l'app).
 import os,sys
 from PIL import Image,ImageDraw,ImageFilter
 import numpy as np
@@ -37,7 +37,8 @@ for nom,f in PERSOS.items():
 logo=recadrer(detourer_fond_blanc(Image.open(os.path.join(SRC,'logo-dragonballday.png'))),0.01)
 l=logo.copy(); l.thumbnail((640,640),Image.LANCZOS); l.save(os.path.join(OUT,'logo.webp'),'WEBP',quality=90,method=6)
 
-# Icône : Goku (dessin de Lolo) sur un fond dégradé orange → rouge, comme le bandeau de l'accueil.
+# Icône de l'app : la tête de Goku choisie par Lolo (Dragonball-Goku.ico) sur le dégradé orange → rouge du bandeau d'accueil.
+# Le Goku détouré de l'accueil (goku.webp) reste le grand dessin.
 def fond_degrade(t):
     import math
     f=Image.new('RGB',(t,t)); px=f.load()
@@ -48,12 +49,13 @@ def fond_degrade(t):
             for (a,ca),(b,cb) in zip(stops,stops[1:]):
                 if d<=b: k=(d-a)/(b-a); px[x,y]=tuple(int(ca[i]+(cb[i]-ca[i])*k) for i in range(3)); break
     return f
-fg='Goku-icone.png' if os.path.exists(os.path.join(SRC,'Goku-icone.png')) else 'Goku.png'
-g=Image.open(os.path.join(SRC,fg)).convert('RGBA')
-if g.getpixel((5,5))[3]==255: g=detourer_fond_blanc(g,TROUS[fg])
-g=recadrer(g.crop((0,0,g.width,int(g.height*0.86))),0)  # tout le visage et les cheveux ; le bas du buste est coupé
+ico=Image.open(os.path.join(SRC,'Dragonball-Goku.ico')); ico.size=max(ico.info['sizes']); g=ico.convert('RGBA')
+g=g.crop(g.getbbox())
 base=fond_degrade(512)
-for nom,taille,marge in [('icon-512.png',512,0.06),('icon-192.png',192,0.06),('apple-touch-icon.png',180,0.04),('favicon.png',64,0.0)]:
-    fond=base.resize((taille,taille),Image.LANCZOS).convert('RGBA'); t=int(taille*(1-marge)); b=g.copy(); b.thumbnail((t,t),Image.LANCZOS)
-    fond.paste(b,((taille-b.width)//2,taille-b.height),b); fond.convert('RGB').save(os.path.join(ROOT,nom) if nom!='favicon.png' else os.path.join(OUT,nom))
+for nom,taille,marge in [('icon-512.png',512,0.14),('icon-192.png',192,0.14),('apple-touch-icon.png',180,0.1)]:
+    fond=base.resize((taille,taille),Image.LANCZOS).convert('RGBA'); t=int(taille*(1-marge)); b=g.resize((t,int(t*g.height/g.width)),Image.LANCZOS)
+    fond.paste(b,((taille-b.width)//2,taille-b.height),b); fond.convert('RGB').save(os.path.join(ROOT,nom))
+# Onglet du navigateur : l'icône telle quelle, sur fond transparent.
+f=g.copy(); f.thumbnail((64,64),Image.LANCZOS); fav=Image.new('RGBA',(64,64)); fav.paste(f,((64-f.width)//2,(64-f.height)//2)); fav.save(os.path.join(OUT,'favicon.png'))
+ico.save(os.path.join(ROOT,'favicon.ico'),sizes=[(16,16),(32,32),(48,48),(64,64)])
 print('Images prêtes dans',OUT)
