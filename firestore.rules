@@ -38,6 +38,13 @@ service cloud.firestore {
       allow read: if hasProfile();
       allow write: if isAdmin();
     }
+    // Pièces jointes (factures PDF…) : un fichier par document, moins de 1 Mo, modifiable par qui gère le module de la fiche.
+    match /files/{id} {
+      allow read: if isStaff();
+      allow create, update: if manages(request.resource.data.module)
+        && request.resource.data.data is string && request.resource.data.data.size() < 1000000;
+      allow delete: if manages(resource.data.module);
+    }
     // Une personne connectée sans rôle peut se signaler ; les admins voient et traitent les demandes.
     match /requests/{uid} {
       allow create, update: if signedIn() && uid == request.auth.uid;

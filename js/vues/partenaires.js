@@ -12,7 +12,7 @@ defineMod({
     {k:"kind",l:"Type",type:"select",options:SPONSOR_KINDS,def:"Sponsor"},
     {k:"level",l:"Niveau",type:"select",options:SPONSOR_LEVELS,blank:"–"},
     {k:"status",l:"Statut",type:"select",options:SPONSOR_STATES,def:"Prospect"},
-    {k:"contactId",l:"Contact",type:"select",blank:"Aucun",options:refOpts("contacts")},
+    {k:"contactId",l:"Contact",type:"ref",col:"contacts",ph:"Nom de la personne",help:"Choisis dans tes contacts ou écris simplement un nom."},
     {k:"owner",l:"Suivi par",type:"member"},
     {k:"amount",l:"Montant en argent",type:"money"},
     {k:"inKindValue",l:"Valeur en nature",type:"money",help:"Lots, matériel, services offerts (valeur estimée)."},
@@ -20,6 +20,7 @@ defineMod({
     {k:"logo",l:"Logo reçu",type:"check"},
     {k:"inKind",l:"Ce qui est offert en nature",type:"textarea"},
     {k:"perks",l:"Contreparties promises",type:"textarea",ph:"Logo sur l’affiche, stand, annonces sur scène, billets…"},
+    {k:"invoice",l:"Facture (PDF)",type:"file",accept:"application/pdf",help:"700 Ko au plus."},
     {k:"notes",l:"Notes",type:"textarea",wide:true},
   ],
 });
@@ -60,7 +61,7 @@ VIEWS.sponsors=()=>{
   ${relance.length?`<div class="banner" style="margin:0"><img alt="" src="${IMG.goku}"><div class="grow small"><b>À relancer cette semaine</b>${relance.map(s=>`<div>${esc(s.name)} · ${fDay(s.next)}</div>`).join("")}</div></div>`:""}
   <div class="card"><div class="row" style="margin-bottom:10px">${searchBox("Rechercher…")}</div>
   ${lanes.length?lanes.map(([st,ls])=>`<h3 class="group-title">${esc(st)} <span class="muted small">· ${ls.length}${sum(ls,s=>s.amount)?" · "+chf(sum(ls,s=>s.amount)):""}</span></h3><div class="list">${ls.sort((a,b)=>(+b.amount||0)-(+a.amount||0)).map(s=>rowItem("sponsors",s,{title:s.name,
-    sub:esc([s.kind,s.level,s.amount?chf(s.amount):"",s.inKindValue?"nature "+chf(s.inKindValue):"",s.next&&!["Signé","Payé","Refusé"].includes(s.status)?"relance "+fDay(s.next):""].filter(Boolean).join(" · ")),end:statusPill(s.status,SPONSOR_PILL)})).join("")}</div>`).join("")
+    sub:esc([s.kind,s.level,s.amount?chf(s.amount):"",s.inKindValue?"nature "+chf(s.inKindValue):"",s.next&&!["Signé","Payé","Refusé"].includes(s.status)?"relance "+fDay(s.next):"",s.invoice?"facture jointe":""].filter(Boolean).join(" · ")),end:statusPill(s.status,SPONSOR_PILL)})).join("")}</div>`).join("")
   :emptyBox("goku",inEdition("sponsors").length?"Rien ne correspond":"Pas encore de sponsor","Ajoute les entreprises à démarcher : tu suis chaque piste jusqu’au paiement.",inEdition("sponsors").length?"":addBtn("sponsors","Premier sponsor"))}</div></div>`;
 };
 

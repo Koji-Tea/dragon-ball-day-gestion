@@ -23,6 +23,8 @@ function fieldHTML(f,o){
     case "select":input=`<select id="${id}" name="${f.k}" ${req}>${f.blank?`<option value="">${esc(f.blank)}</option>`:""}${(typeof f.options==="function"?f.options():f.options).map(x=>Array.isArray(x)?opt(x[0],x[1],v):opt(x,x,v)).join("")}</select>`;break;
     // Un nom libre, ou un membre de l'équipe proposé dans la liste (on garde alors son identifiant).
     case "member":input=`<input id="${id}" name="${f.k}" list="${id}_l" value="${esc(memberName(v))}" placeholder="Nom de la personne" autocomplete="off"><datalist id="${id}_l">${[...TEAM.values()].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(m=>`<option value="${esc(m.name||m.email)}">`).join("")}</datalist>`;break;
+    case "ref":input=`<input id="${id}" name="${f.k}" list="${id}_l" value="${esc(refName(f.col,v)||v)}" placeholder="${esc(f.ph||"Nom")}" autocomplete="off"><datalist id="${id}_l">${(COLS[f.col].perEdition?inEdition(f.col):all(f.col)).map(x=>x.name).filter(Boolean).sort((a,b)=>a.localeCompare(b,"fr")).map(n=>`<option value="${esc(n)}">`).join("")}</datalist>`;break;
+    case "file":return `<div class="f wide"><span>${esc(f.l)}</span><div id="${id}_box">${fileBox(id,f,v&&v.fileId?v:null)}</div>${f.help?`<span class="tiny muted" style="font-weight:600">${esc(f.help)}</span>`:""}</div>`;
     case "photo":return `<div class="f wide"><span>${esc(f.l)}</span><div class="photo-field"><img id="${id}_img" class="photo-prev" alt="" src="${esc(v)}" ${v?"":"hidden"}><span id="${id}_none" class="avatar photo-none" ${v?"hidden":""}>${ic("people")}</span>
       <input type="hidden" id="${id}" name="${f.k}" value="${esc(v)}"><div class="row"><label class="btn sm" for="${id}_file">${ic("upload")}${v?"Changer":"Choisir une photo"}</label><input id="${id}_file" type="file" accept="image/*" data-change="photo" data-target="${id}" hidden>
       <button type="button" class="btn sm ghost" data-act="photoClear" data-target="${id}" ${v?"":"hidden"}>Retirer</button></div></div>${f.help?`<span class="tiny muted" style="font-weight:600">${esc(f.help)}</span>`:""}</div>`;
@@ -40,6 +42,8 @@ function readForm(mod,form){
     if(f.type==="check")o[f.k]=fd.has(f.k);
     else if(f.type==="checks")o[f.k]=fd.getAll(f.k);
     else if(f.type==="member"){const v=String(fd.get(f.k)||"").trim(),m=[...TEAM.values()].find(m=>norm(m.name||m.email)===norm(v));o[f.k]=m?m.uid:v}
+    else if(f.type==="ref"){const v=String(fd.get(f.k)||"").trim(),x=v&&all(f.col).find(x=>norm(x.name)===norm(v));o[f.k]=x?x.id:v}
+    else if(f.type==="file"){const v=fd.get(f.k);o[f.k]=v?JSON.parse(v):null}
     else if(f.type==="money"||f.type==="number"){const v=fd.get(f.k);o[f.k]=v===""||v==null?null:+v}
     else o[f.k]=String(fd.get(f.k)??"").trim();
   });
@@ -59,6 +63,7 @@ function saveRecord(key,form){
   let o={...(old||{}),...readForm(mod,form),id,demo:false};
   if(COLS[mod.col].perEdition&&!o.editionId){const e=currentEdition();if(!e){toast("Crée d’abord une édition de la convention.","freezer");return}o.editionId=e.id}
   if(mod.beforeSave)o=mod.beforeSave(o,old);
+  storeFiles(mod,o,old);
   const saved=put(mod.col,o);if(mod.afterSave)mod.afterSave(saved,old);closeSheet();toast(old?"Modifications enregistrées.":mod.added||"Enregistré !",mod.img);
 }
 
@@ -80,7 +85,7 @@ const noEdition=(t,img)=>head(t,"","",img)+`<div class="card">${emptyBox(img,"Pa
 // Export CSV générique : une colonne par champ du module.
 function exportMod(key,xs,name){
   const m=MODS[key];
-  const val=(f,o)=>{const v=o[f.k];if(f.type==="check")return v?"oui":"";if(f.type==="member")return memberName(v)||"";
+  const val=(f,o)=>{const v=o[f.k];if(f.type==="check")return v?"oui":"";if(f.type==="member")return memberName(v)||"";if(f.type==="ref")return refName(f.col,v)||v||"";if(f.type==="file")return v&&v.name||"";
     if(f.type==="checks"){const op=typeof f.options==="function"?f.options():f.options;return (v||[]).map(k=>(op.find(x=>x[0]===k)||[k,k])[1]).join(", ")}
     if(f.type==="select"&&f.options&&typeof f.options==="function"){const x=f.options().find(x=>Array.isArray(x)&&x[0]===v);return x?x[1]:v||""}
     return v??""};
@@ -105,4 +110,40 @@ function setPhoto(target,data){
   const h=document.getElementById(target);if(!h)return;h.value=data;
   const im=document.getElementById(target+"_img"),no=document.getElementById(target+"_none"),rm=h.parentNode.querySelector("[data-act=photoClear]"),lb=h.parentNode.querySelector("label.btn");
   im.src=data;im.hidden=!data;no.hidden=!!data;rm.hidden=!data;lb.lastChild.textContent=data?"Changer":"Choisir une photo";
+}
+
+/* Pièce jointe d'une fiche (ex. facture PDF). Le fichier choisi attend dans PENDING_FILES jusqu'à l'enregistrement de la fiche,
+   puis part dans son propre document (voir saveAttachment) : la fiche ne garde que le nom, la taille et l'identifiant. */
+const PENDING_FILES=new Map();
+const fileBox=(id,f,m)=>`<input type="hidden" id="${id}" name="${f.k}" value="${esc(m?JSON.stringify(m):"")}">
+  <div class="row">${m?`<button type="button" class="btn sm" data-act="openFile" data-file="${esc(m.fileId)}">${ic("clip")}${esc(m.name)}</button><span class="tiny muted">${fSize(m.size)}</span>`:`<span class="small muted">Aucun fichier</span>`}</div>
+  <div class="row" style="margin-top:8px"><label class="btn sm" for="${id}_file">${ic("upload")}${m?"Remplacer":"Joindre un fichier"}</label><input id="${id}_file" type="file" accept="${esc(f.accept||"")}" data-change="file" data-target="${id}" data-k="${f.k}" hidden>
+  ${m?`<button type="button" class="btn sm ghost" data-act="fileClear" data-target="${id}" data-k="${f.k}">Retirer</button>`:""}</div>`;
+function fileField(target,k){const form=document.getElementById(target).form;return MODS[form.dataset.mod].fields.find(f=>f.k===k)}
+function setFile(target,k,m){document.getElementById(target+"_box").innerHTML=fileBox(target,fileField(target,k),m)}
+function loadFile(file,target,k){
+  const f=fileField(target,k);
+  if(f.accept==="application/pdf"&&file.type!=="application/pdf"&&!/\.pdf$/i.test(file.name)){toast("Choisis un fichier PDF.","freezer");return}
+  if(file.size>FILE_MAX){toast(`Ce fichier fait ${fSize(file.size)} : la limite est de ${fSize(FILE_MAX)}. Compresse-le (ex. ilovepdf.com) puis réessaie.`,"freezer");return}
+  const r=new FileReader();
+  r.onload=()=>{const m={fileId:uid(),name:file.name,size:file.size,type:file.type||"application/pdf"};PENDING_FILES.set(m.fileId,{...m,data:r.result});setFile(target,k,m)};
+  r.onerror=()=>toast("Ce fichier n’a pas pu être lu.","freezer");
+  r.readAsDataURL(file);
+}
+// À l'enregistrement : envoie les fichiers choisis, supprime ceux qui ont été remplacés ou retirés.
+function storeFiles(mod,o,old){
+  mod.fields.filter(f=>f.type==="file").forEach(f=>{
+    const nw=o[f.k],od=old&&old[f.k],p=nw&&PENDING_FILES.get(nw.fileId);
+    if(p)saveAttachment(nw.fileId,{...p,module:COLS[mod.col].module||"",col:mod.col,recId:o.id||""}).catch(()=>toast(`« ${nw.name} » n’a pas pu être enregistré. Réessaie avec un fichier plus léger.`,"freezer"));
+    if(od&&od.fileId&&(!nw||nw.fileId!==od.fileId))dropAttachment(od.fileId);
+  });
+  PENDING_FILES.clear();
+}
+async function openFile(id){
+  const w=window.open("","_blank");
+  try{
+    const d=PENDING_FILES.get(id)||await loadAttachment(id);if(!d)throw 0;
+    const blob=await (await fetch(d.data)).blob(),url=URL.createObjectURL(blob);
+    if(w)w.location.href=url;else{const a=document.createElement("a");a.href=url;a.download=d.name;document.body.appendChild(a);a.click();a.remove()}
+  }catch(e){if(w)w.close();toast("Ce fichier n’a pas pu être ouvert. Vérifie la connexion puis réessaie.","freezer")}
 }
