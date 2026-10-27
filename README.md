@@ -4,7 +4,7 @@ Application de gestion de la convention Dragon Ball Day (association Dragon Ball
 
 Construite sur la même base que [Koji Tea – Gestion](https://github.com/Koji-Tea/koji-tea-gestion) : une application web installable (PWA), sans serveur, qui fonctionne aussi hors connexion.
 
-- **En ligne :** https://gestion.dragonballdays.ch (hébergement Infomaniak, dossier `/sites/gestion.dragonballdays.ch`).
+- **En ligne :** https://gestion.dragonballdays.ch (GitHub Pages depuis la branche `main`, comme Koji Tea ; le domaine reste chez Infomaniak avec un enregistrement CNAME `gestion` → `koji-tea.github.io`).
 - **Données :** Firebase (Firestore + Authentication), projet séparé de Koji Tea.
 - **Mode essai :** tant que `firebase-config.js` vaut `null`, tout reste dans le navigateur. Pratique pour découvrir l’app.
 
@@ -39,9 +39,9 @@ Ajouter un module : le décrire avec `defineMod({...})` (voir `js/vues/contacts.
 
 ## Mettre en ligne
 
-1. Mettre la configuration Firebase dans `firebase-config.js`.
-2. Copier `firestore.rules` dans Console Firebase > Firestore Database > Règles, puis Publier.
-3. Lancer `tools/faire_zip.sh`, puis envoyer le contenu du .zip dans `/sites/gestion.dragonballdays.ch` avec le Web FTP d’Infomaniak.
+Chaque fusion dans `main` est publiée automatiquement par GitHub Pages (le fichier `CNAME` donne l’adresse). Penser à changer la version dans `sw.js` pour que les téléphones prennent la nouvelle version.
+
+Une seule fois : mettre la configuration Firebase dans `firebase-config.js` et copier `firestore.rules` dans Console Firebase > Firestore Database > Règles, puis Publier.
 
 ## Images
 
