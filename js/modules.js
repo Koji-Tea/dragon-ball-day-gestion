@@ -50,7 +50,7 @@ function readForm(mod,form){
   return o;
 }
 function recordSheet(key,id,preset={}){
-  const mod=MODS[key];const o=id?get(mod.col,id):{...preset};if(id&&!o)return;
+  const mod=MODS[key];let o=id?get(mod.col,id):{...preset};if(id&&!o)return;if(mod.prefill)o=mod.prefill(o);
   const ro=!canWrite(mod.col)&&!canPropose(mod.col),ask=!canWrite(mod.col)&&!ro;
   openSheet(sheetHead(id?(mod.titleOf?mod.titleOf(o):esc(o.name||mod.one)):mod.newLabel,mod.img)+
     (mod.sheetTop&&id?mod.sheetTop(o):"")+
