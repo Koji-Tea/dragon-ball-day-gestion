@@ -1,6 +1,6 @@
 // Garde l'application disponible hors connexion (les données passent par le cache de Firestore).
 // Changer le numéro de version à chaque mise en ligne pour forcer la mise à jour sur les téléphones.
-const C="dbday-v18";
+const C="dbday-v19";
 const FILES=["./","index.html","css/app.css","firebase-config.js","manifest.webmanifest","icon-192.png","apple-touch-icon.png","favicon.ico",
   "js/outils.js","js/donnees.js","js/modules.js","js/vues/accueil.js","js/vues/taches.js","js/vues/contacts.js","js/vues/invites.js","js/vues/logistique.js","js/vues/partenaires.js","js/vues/programme.js","js/vues/benevoles.js","js/vues/membres.js","js/vues/guerriers.js","js/vues/finances.js","js/vues/billetterie.js","js/vues/editions.js","js/vues/reglages.js","js/vues/demandes.js","js/app.js",
   "img/logo.webp","img/favicon.png","img/goku.webp","img/saiyaman.webp","img/bulma.webp","img/chichi.webp","img/piccolo.webp","img/trunks.webp","img/freezer.webp",
@@ -11,5 +11,7 @@ self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.a
 self.addEventListener("fetch",e=>{
   if(e.request.method!=="GET")return;const u=new URL(e.request.url);
   if(u.origin!==location.origin&&u.host!=="fonts.googleapis.com"&&u.host!=="fonts.gstatic.com")return;
-  e.respondWith(fetch(e.request).then(r=>{const cp=r.clone();caches.open(C).then(c=>c.put(e.request,cp));return r}).catch(()=>caches.match(e.request)));
+  // no-cache : on redemande toujours au serveur s'il y a une nouvelle version, sans attendre le cache du navigateur (10 min sur GitHub Pages).
+  const req=e.request.mode==="navigate"?new Request(e.request.url,{cache:"no-cache",credentials:"same-origin"}):new Request(e.request,{cache:"no-cache"});
+  e.respondWith(fetch(req).then(r=>{if(r.ok){const cp=r.clone();caches.open(C).then(c=>c.put(e.request,cp))}return r}).catch(()=>caches.match(e.request)));
 });
