@@ -117,5 +117,10 @@ document.addEventListener("submit",e=>{
   if(kind==="ticketManual"&&canWrite("ticketing"))saveTicketManual(f);
 });
 
-if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator&&location.protocol==="https:"){
+  // Une nouvelle version vient d'être installée : on recharge pour l'afficher tout de suite (pas au tout premier passage).
+  const had=!!navigator.serviceWorker.controller;let done=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!done){done=true;location.reload()}});
+  navigator.serviceWorker.register("sw.js").then(r=>r.update()).catch(()=>{});
+}
 initStore();
