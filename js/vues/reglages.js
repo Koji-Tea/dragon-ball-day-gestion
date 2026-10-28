@@ -73,8 +73,8 @@ function loadDemo(){
   put("guests",E({name:"Team Cosplay Namek",kind:"Cosplayeur·euse",status:"Idée"}));
   [["Atelier Capsule","Artiste","Accepté",1,60,"A3"],["Figurines du Lac","Exposant","Payé",3,240,"B1"],["Club Manga Yverdon","Association","Accepté",2,0,"C2"],["Ramen Saiyan","Restauration","Candidature",2,150,""]]
     .forEach(([name,kind,status,tables,fee,spot])=>put("exhibitors",E({name,kind,status,tables,fee,spot,power:kind==="Restauration"})));
-  put("lodging",E({guestId:g1.id,hotel:"Hôtel du Lac (exemple)",status:"Confirmé",checkIn:addDays(D,-1),checkOut:addDays(D,1),rooms:1,price:140,paid:false}));
-  put("lodging",E({guestId:g2.id,hotel:"Hôtel du Lac (exemple)",status:"Option",checkIn:D,checkOut:addDays(D,1),rooms:1,price:140}));
+  put("lodging",E({guestId:g1.id,hotel:"Hôtel du Lac (exemple)",status:"Confirmé",checkIn:addDays(D,-1),checkOut:addDays(D,1),rooms:1,total:280,paid:false}));
+  put("lodging",E({guestId:g2.id,hotel:"Hôtel du Lac (exemple)",status:"Option",checkIn:D,checkOut:addDays(D,1),rooms:1,total:140}));
   put("transport",E({guestId:g1.id,kind:"Train",date:addDays(D,-1),time:"16:42",from:"Genève Aéroport",to:"Yverdon-les-Bains",cost:42,booked:true}));
   put("transport",E({guestId:g1.id,kind:"Navette de l’équipe",date:addDays(D,-1),time:"17:50",from:"Gare d’Yverdon",to:"Hôtel du Lac",booked:true}));
   [["Garage Namek SA","Sponsor","Pack Goku","Signé",3000,500],["Banque Capsule","Sponsor","Pack Vegeta","En discussion",1500,0],["Radio Bulles","Média","Pack Bulma","Payé",0,800],["Ville d’Yverdon-les-Bains","Institution / subvention","","Contacté",5000,0]]
