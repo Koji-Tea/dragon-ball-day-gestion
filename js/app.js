@@ -47,7 +47,7 @@ VIEWS.plus=()=>{const xs=navItems().filter(n=>!tabsShown().includes(n[0]));retur
 /* ---------- Actions ---------- */
 const ACT={
   close:closeSheet,
-  newRecord:el=>recordSheet(el.dataset.mod),openRecord:el=>recordSheet(el.dataset.mod,el.dataset.id),
+  newRecord:el=>recordSheet(el.dataset.mod),newEventTask:el=>recordSheet("tasks",null,{pole:"Manifestations",eventId:el.dataset.id}),openRecord:el=>recordSheet(el.dataset.mod,el.dataset.id),
   delRecord:el=>{const m=MODS[el.dataset.mod];if(!canWrite(m.col)){proposeDelete(m,el.dataset.id);closeSheet();return}del(m.col,el.dataset.id);
     // Supprimer une édition supprime aussi tout ce qui lui appartient.
     if(m.col==="editions")Object.keys(COLS).filter(c=>COLS[c].perEdition&&canWrite(c)).forEach(c=>all(c).filter(o=>o.editionId===el.dataset.id).forEach(o=>del(c,o.id)));
@@ -101,6 +101,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
 document.addEventListener("input",e=>{if(e.target.dataset.input==="search"){UI.q=e.target.value;render()}});
 document.addEventListener("change",e=>{
   const t=e.target,c=t.dataset.change;
+  if(t.form&&t.name)t.form.querySelectorAll(`[data-show-k="${t.name}"]`).forEach(x=>{x.hidden=t.value!==x.dataset.showV});
   if(c==="edition")pickEdition(t.value);
   if(c==="photo"&&t.files[0]){loadPhoto(t.files[0],t.dataset.target);t.value=""}
   if(c==="file"&&t.files[0]){loadFile(t.files[0],t.dataset.target,t.dataset.k);t.value=""}

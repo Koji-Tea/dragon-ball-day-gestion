@@ -15,7 +15,10 @@ function currentEdition(){
 }
 function inEdition(col){const e=currentEdition();return all(col).filter(o=>e&&o.editionId===e.id)}
 
+// Champ visible seulement quand un autre champ a une valeur donnée (show:{k,v}) ; basculé à chaque changement du formulaire.
+const shown=(f,o)=>!f.show||(o[f.show.k]??"")===f.show.v;
 function fieldHTML(f,o){
+  if(f.show)return fieldHTML({...f,show:null},o).replace("<div ",`<div data-show-k="${esc(f.show.k)}" data-show-v="${esc(f.show.v)}" ${shown(f,o)?"":"hidden"} `);
   const v=o[f.k]??f.def??"",id="f_"+f.k,req=f.req?"required":"",cls=f.wide||f.type==="textarea"||f.type==="checks"?"f wide":"f";
   let input;
   switch(f.type){
@@ -47,6 +50,7 @@ function readForm(mod,form){
     else if(f.type==="money"||f.type==="number"){const v=fd.get(f.k);o[f.k]=v===""||v==null?null:+v}
     else o[f.k]=String(fd.get(f.k)??"").trim();
   });
+  mod.fields.forEach(f=>{if(!shown(f,o))o[f.k]=""});
   return o;
 }
 function recordSheet(key,id,preset={}){

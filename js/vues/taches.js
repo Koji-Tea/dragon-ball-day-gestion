@@ -8,6 +8,8 @@ defineMod({
   fields:[
     {k:"title",l:"Que faut-il faire ?",req:true,wide:true,ph:"ex. Envoyer le contrat à l’invité"},
     {k:"pole",l:"Pôle",type:"select",options:POLES,def:"Général"},
+    {k:"eventId",l:"Manifestation",type:"select",blank:"Choisir la manifestation",show:{k:"pole",v:"Manifestations"},
+      options:()=>inEdition("events").sort((a,b)=>(a.start||"")<(b.start||"")?-1:1).map(e=>[e.id,e.name+(e.start?" · "+fDate(e.start):"")])},
     {k:"owner",l:"Responsable",type:"member"},
     {k:"due",l:"Échéance",type:"date"},
     {k:"status",l:"Statut",type:"select",options:TASK_STATES,def:"À faire"},
@@ -25,7 +27,7 @@ const dueLabel=t=>{if(!t.due)return "";const d=daysTo(t.due);if(t.status==="Fait
 function taskItem(t){
   const can=canWrite("tasks"),done=t.status==="Fait";
   return `<div class="item ${done?"done":""}"><button class="tick ${done?"on":""}" ${can?"":"disabled"} data-act="toggleTask" data-id="${t.id}" aria-label="${done?"Marquer à faire":"Marquer comme fait"}">${ic("check")}</button>
-    <div class="main click" style="cursor:pointer" data-act="openRecord" data-mod="tasks" data-id="${t.id}"><b>${esc(t.title)}</b><span class="tiny muted">${t.high&&!done?`<b style="display:inline;color:var(--bad)">Prioritaire</b> · `:""}${esc([t.pole,memberName(t.owner),t.status==="En cours"?"en cours":""].filter(Boolean).join(" · "))}</span></div>
+    <div class="main click" style="cursor:pointer" data-act="openRecord" data-mod="tasks" data-id="${t.id}"><b>${esc(t.title)}</b><span class="tiny muted">${t.high&&!done?`<b style="display:inline;color:var(--bad)">Prioritaire</b> · `:""}${esc([t.pole==="Manifestations"&&get("events",t.eventId)?get("events",t.eventId).name:t.pole,memberName(t.owner),t.status==="En cours"?"en cours":""].filter(Boolean).join(" · "))}</span></div>
     <div class="end">${dueLabel(t)}</div></div>`;
 }
 VIEWS.taches=()=>{
