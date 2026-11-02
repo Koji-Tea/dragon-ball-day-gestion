@@ -22,7 +22,12 @@ defineMod({
     {k:"material",l:"Matériel à emporter",type:"textarea",wide:true,ph:"Flyers, kakémono, caisse, terminal de paiement…"},
     {k:"notes",l:"Notes",type:"textarea",wide:true},
   ],
+  // Tâches reliées à cette manifestation (pôle Manifestations dans les tâches).
+  sheetTop:o=>{if(!canRead("tasks"))return "";const ts=eventTasks(o.id);
+    return `<div class="card" style="margin:0 0 14px"><div class="row" style="justify-content:space-between"><h3 style="margin:0">Tâches · ${ts.filter(t=>t.status!=="Fait").length} à faire</h3>${canWrite("tasks")?`<button type="button" class="btn sm" data-act="newEventTask" data-id="${o.id}">${ic("plus")}Tâche</button>`:""}</div>
+    ${ts.length?`<div class="list">${ts.map(taskItem).join("")}</div>`:`<p class="small muted" style="margin:6px 0 0">Aucune tâche pour l’instant.</p>`}</div>`},
 });
+const eventTasks=id=>all("tasks").filter(t=>t.eventId===id).sort((a,b)=>(a.status==="Fait")-(b.status==="Fait")||((a.due||"9")<(b.due||"9")?-1:1));
 const eventEnd=e=>e.end&&e.end>e.start?e.end:e.start;
 VIEWS.manifestations=()=>{
   const ed=currentEdition();if(!ed)return noEdition("Manifestations","chichi");
@@ -31,7 +36,7 @@ VIEWS.manifestations=()=>{
   const next=xs.filter(e=>e.status!=="Annulée"&&eventEnd(e)>=today()),past=xs.filter(e=>!next.includes(e)).reverse();
   const when=e=>e.start?(e.end&&e.end>e.start?`${fDay(e.start)} → ${fDay(e.end)}`:fDay(e.start)):"";
   const row=e=>rowItem("events",e,{title:e.name,av:false,
-    sub:esc([when(e),e.place,(e.goals||[]).join(", "),e.ticketsSold?plural(+e.ticketsSold,"billet vendu","billets vendus"):"",e.sales?chf(e.sales):""].filter(Boolean).join(" · ")),
+    sub:esc([when(e),e.place,(e.goals||[]).join(", "),e.ticketsSold?plural(+e.ticketsSold,"billet vendu","billets vendus"):"",e.sales?chf(e.sales):"",canRead("tasks")&&eventTasks(e.id).some(t=>t.status!=="Fait")?plural(eventTasks(e.id).filter(t=>t.status!=="Fait").length,"tâche à faire","tâches à faire"):""].filter(Boolean).join(" · ")),
     end:statusPill(e.status,{"Confirmée":"good","Inscription envoyée":"warn","Terminée":"info","Annulée":"neutral"})});
   return head("Manifestations",esc(ed.name)+" · salons et événements pour vendre des billets et faire la promo",addBtn("events","Manifestation")+`<button class="btn" data-act="exportMod" data-mod="events">${ic("down")}CSV</button>`,"chichi")+
   `<div class="stack"><div class="kpis">
