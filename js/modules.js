@@ -4,7 +4,7 @@
    Les modules des étapes suivantes (invités, sponsors, bénévoles…) se branchent de la même façon. */
 const MODS={};
 const VIEWS={};
-const UI={edition:ls("dbday-edition")||"",q:"",filter:"",taskTab:"ouvertes",taskPole:"",tab:{},day:""};
+const UI={edition:ls("dbday-edition")||"",q:"",filter:"",taskTab:"ouvertes",taskPole:"",taskMine:ls("dbday-mine")==="1",tab:{},day:""};
 function defineMod(m){MODS[m.key]=m;return m}
 
 /* Édition affichée : celle choisie, sinon la prochaine à venir, sinon la plus récente. */
@@ -25,7 +25,9 @@ function fieldHTML(f,o){
     case "textarea":input=`<textarea id="${id}" name="${f.k}" ${req} placeholder="${esc(f.ph||"")}">${esc(v)}</textarea>`;break;
     case "select":input=`<select id="${id}" name="${f.k}" ${req}>${f.blank?`<option value="">${esc(f.blank)}</option>`:""}${(typeof f.options==="function"?f.options():f.options).map(x=>Array.isArray(x)?opt(x[0],x[1],v):opt(x,x,v)).join("")}</select>`;break;
     // Un nom libre, ou un membre de l'équipe proposé dans la liste (on garde alors son identifiant).
-    case "member":input=`<input id="${id}" name="${f.k}" list="${id}_l" value="${esc(memberName(v))}" placeholder="Nom de la personne" autocomplete="off"><datalist id="${id}_l">${[...TEAM.values()].sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(m=>`<option value="${esc(m.name||m.email)}">`).join("")}</datalist>`;break;
+    // Un membre de l'association ou de l'équipe ; un ancien nom écrit à la main reste proposé.
+    case "member":{const ms=memberOpts();if(v&&!ms.some(m=>m[0]===v))ms.unshift([v,memberName(v)]);
+      input=`<select id="${id}" name="${f.k}"><option value="">Personne</option>${ms.map(([k,l])=>opt(k,l,v)).join("")}</select>`;break}
     case "ref":input=`<input id="${id}" name="${f.k}" list="${id}_l" value="${esc(refName(f.col,v)||v)}" placeholder="${esc(f.ph||"Nom")}" autocomplete="off"><datalist id="${id}_l">${(COLS[f.col].perEdition?inEdition(f.col):all(f.col)).map(x=>x.name).filter(Boolean).sort((a,b)=>a.localeCompare(b,"fr")).map(n=>`<option value="${esc(n)}">`).join("")}</datalist>`;break;
     case "file":return `<div class="f wide"><span>${esc(f.l)}</span><div id="${id}_box">${fileBox(id,f,v&&v.fileId?v:null)}</div>${f.help?`<span class="tiny muted" style="font-weight:600">${esc(f.help)}</span>`:""}</div>`;
     case "photo":return `<div class="f wide"><span>${esc(f.l)}</span><div class="photo-field"><img id="${id}_img" class="photo-prev" alt="" src="${esc(v)}" ${v?"":"hidden"}><span id="${id}_none" class="avatar photo-none" ${v?"hidden":""}>${ic("people")}</span>
