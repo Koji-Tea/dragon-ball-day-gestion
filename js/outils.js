@@ -27,6 +27,7 @@ const IMG={logo:"img/logo.webp",goku:"img/goku.webp",saiyaman:"img/saiyaman.webp
 
 const ICON={
  home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/>',
+ megaphone:'<path d="M4 10v4a1 1 0 0 0 1 1h2l6 4V5L7 9H5a1 1 0 0 0-1 1z"/><path d="M16.5 9a3.5 3.5 0 0 1 0 6M19 6.5a7 7 0 0 1 0 11"/>',
  check:'<path d="m4.5 12.5 4.5 4.5 10.5-11"/>',
  list:'<rect x="3.5" y="4" width="17" height="16" rx="3"/><path d="m7 9 1.5 1.5L11 8M7 15l1.5 1.5L11 14M13.5 9.5h4M13.5 15.5h4"/>',
  people:'<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.6-.2 4.4 1.4 5 4.4"/>',

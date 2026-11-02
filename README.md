@@ -12,6 +12,7 @@ Application de gestion de la convention Dragon Ball Day (association Dragon Ball
 | Bénévoles | Inscriptions, créneaux par poste, doubles affectations ; chaque bénévole voit son planning |
 | Sponsors & partenaires | Suivi de chaque piste jusqu’au paiement, relances, contreparties, logos |
 | Fournisseurs | Devis, commandes, livraisons, acomptes et paiements |
+| Manifestations | Salons et événements où l’équipe tient un stand : vente de billets, promo, matériel |
 | Contacts | Le carnet d’adresses commun à toutes les éditions |
 | Budget & compta | Prévu, engagé et payé par catégorie ; les montants des autres modules arrivent tout seuls |
 | Billetterie | Import du CSV des ventes Infomaniak (totaux seulement, sans données des acheteurs), ventes par semaine et par tarif, remplissage |
