@@ -106,6 +106,7 @@ document.addEventListener("change",e=>{
   if(c==="photo"&&t.files[0]){loadPhoto(t.files[0],t.dataset.target);t.value=""}
   if(c==="file"&&t.files[0]){loadFile(t.files[0],t.dataset.target,t.dataset.k);t.value=""}
   if(c==="taskPole"){UI.taskPole=t.value;render()}
+  if(c==="taskMine"){UI.taskMine=t.checked;ls("dbday-mine",t.checked?"1":"0");render()}
   if(c==="ticketFile"&&t.files[0]&&canWrite("ticketing")){const file=t.files[0],r=new FileReader();r.onload=()=>{let txt=r.result;if(txt.includes("\uFFFD")){const r2=new FileReader();r2.onload=()=>ticketImportSheet(file.name,r2.result);r2.readAsText(file,"windows-1252");return}ticketImportSheet(file.name,txt)};r.readAsText(file);t.value=""}
   if(c==="import"&&t.files[0]){const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(j.app!=="dragon-ball-day"||!j.data)throw 0;Object.keys(COLS).forEach(col=>(j.data[col]||[]).forEach(o=>put(col,o)));if(j.cfg)putCfg(j.cfg);toast("Sauvegarde restaurée.")}catch(err){toast("Ce fichier n’est pas une sauvegarde Dragon Ball Day.","freezer")}};r.readAsText(t.files[0])}
 });

@@ -209,3 +209,17 @@ async function createMember({email,name,role,modules}){
 }
 // Un membre de l'équipe (identifiant) ou un nom écrit à la main.
 const memberName=u=>{if(!u)return "";const m=TEAM.get(u);return m?(m.name||m.email):u};
+// Choix du responsable : les membres actifs de l'association et les comptes de l'équipe.
+// Un membre qui a un compte (même e-mail) est enregistré par son identifiant de compte, sinon par son nom.
+function memberOpts(){
+  const out=new Map(),acc=new Map([...TEAM.values()].filter(u=>u.email).map(u=>[norm(u.email),u]));
+  if(canRead("members"))all("members").filter(m=>m.status!=="Inactif"&&m.name).forEach(m=>{const u=m.email&&acc.get(norm(m.email));out.set(u?u.uid:m.name,m.name)});
+  TEAM.forEach(u=>{if(!out.has(u.uid))out.set(u.uid,u.name||u.email)});
+  return [...out].sort((a,b)=>a[1].localeCompare(b[1],"fr"));
+}
+// Ce qui est à moi : mon compte, mon nom, ou le nom de ma fiche membre (même e-mail).
+function isMine(v){
+  if(!v)return false;if(v===ME.uid)return true;
+  const names=[ME.name,...(canRead("members")?all("members").filter(m=>m.email&&ME.email&&norm(m.email)===norm(ME.email)).map(m=>m.name):[])].filter(Boolean).map(norm);
+  return names.includes(norm(v));
+}
