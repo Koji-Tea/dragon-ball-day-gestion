@@ -82,6 +82,8 @@ function loadDemo(){
   [["Son & Lumière Léman","Sono de la grande scène","Sono & lumière","Commandé",2400,800,addDays(D,-1)],["Imprimerie du Nord","Affiches et flyers","Impression & communication","Payé",650,0,addDays(t,20)],
    ["Location Tables SA","120 tables et 300 chaises","Location de matériel","Devis reçu",900,0,addDays(D,-1)],["Sécurité Plus","4 agents de sécurité","Sécurité","Devis demandé",0,0,D]]
     .forEach(([name,item,cat,status,amount,deposit,delivery])=>put("suppliers",E({name,item,cat,status,amount,deposit,delivery})));
+  [["Polymanga (exemple)","Montreux",addDays(t,-20),addDays(t,-18),"Terminée",["Vente de billets","Promotion"],350,64,1280],["Marché de Noël (exemple)","Yverdon-les-Bains",addDays(t,25),"","Confirmée",["Vente de billets"],80,0,0],["Salon du jeu (exemple)","Lausanne",addDays(t,60),addDays(t,61),"Inscription envoyée",["Promotion","Recrutement de bénévoles"],0,0,0]]
+    .forEach(([name,place,start,end,status,goals,standCost,ticketsSold,sales])=>put("events",E({name,place,start,end,status,goals,standCost,ticketsSold,sales})));
   [["Ouverture des portes","Animation","Grande scène","09:30","10:00"],["Concert d’ouverture","Concert","Grande scène","10:00","10:45",g3.id],["Doublage : les coulisses","Conférence","Espace doublage","11:00","12:00",g1.id],
    ["Dédicaces","Dédicaces","Village des artistes","13:30","15:00",g1.id],["Atelier dessin manga","Atelier","Espace dessin","14:00","15:30",g2.id],["Dédicaces Aiko","Dédicaces","Village des artistes","15:30","17:00",g2.id],
    ["Concours cosplay","Concours cosplay","Grande scène","15:00","16:30"],["Quiz Dragon Ball","Quiz / jeu","Espace gaming","16:00","17:00"],["Remise des prix","Animation","Grande scène","16:15","17:00"]]

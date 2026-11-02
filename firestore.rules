@@ -84,6 +84,7 @@ service cloud.firestore {
     match /transport/{id}   { allow read: if sees('logistique'); allow write: if manages('logistique'); }
     match /sponsors/{id}    { allow read: if sees('sponsors'); allow write: if manages('sponsors'); }
     match /suppliers/{id}   { allow read: if sees('fournisseurs'); allow write: if manages('fournisseurs'); }
+    match /events/{id}      { allow read: if sees('manifestations'); allow write: if manages('manifestations'); }
     match /volunteers/{id}  { allow read: if sees('benevoles'); allow write: if manages('benevoles'); }
     // Le programme est visible par toute l'équipe, bénévoles compris.
     match /activities/{id}  { allow read: if hasProfile(); allow write: if manages('programme'); }

@@ -1,6 +1,6 @@
 "use strict";
 /* ---------- Tâches et rétro-planning de l'édition ---------- */
-const POLES=["Général","Invités","Artistes & exposants","Partenaires & sponsors","Programme & activités","Logistique","Bénévoles","Communication","Finances","Billetterie"];
+const POLES=["Général","Invités","Artistes & exposants","Partenaires & sponsors","Programme & activités","Logistique","Bénévoles","Communication","Manifestations","Finances","Billetterie"];
 const TASK_STATES=["À faire","En cours","Fait"];
 defineMod({
   key:"tasks",col:"tasks",label:"Tâches",one:"tâche",img:"trunks",newLabel:"Nouvelle tâche",added:"Tâche ajoutée. Trunks veille sur l’échéance !",

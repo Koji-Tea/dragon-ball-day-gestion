@@ -6,6 +6,7 @@ const NAV=[["accueil","Accueil","home",()=>true,""],["taches","Tâches","list",(
   ["logistique","Logement & transport","bed",()=>canRead("lodging"),"La convention"],["benevoles","Bénévoles","heart",()=>canRead("shifts")&&(!isStaff()||canRead("volunteers")),"La convention"],
   ["sponsors","Sponsors & partenaires","gift",()=>canRead("sponsors"),"Partenaires"],["fournisseurs","Fournisseurs","truck",()=>canRead("suppliers"),"Partenaires"],
   ["contacts","Contacts","people",()=>canRead("contacts"),"Partenaires"],
+  ["manifestations","Manifestations","megaphone",()=>canRead("events"),"Partenaires"],
   ["budget","Budget & compta","coins",()=>canRead("budget"),"Argent"],["billetterie","Billetterie","ticket",()=>canRead("ticketing"),"Argent"],
   ["membres","Membres","id",()=>canRead("members"),"Association"],["guerriers","Guerriers Z","bolt",()=>canRead("warriors"),"Association"],["editions","Éditions","star",()=>true,"Association"],["reglages","Réglages","gear",()=>true,"Association"]];
 const TAB=["accueil","taches","programme","benevoles"];

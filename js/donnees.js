@@ -27,6 +27,7 @@ const COLS={
   shifts:{read:ALL_ROLES,write:BOARD,module:"benevoles",perEdition:true,own:"emails"},
   sponsors:{read:STAFF,write:BOARD,module:"sponsors",perEdition:true},
   suppliers:{read:STAFF,write:BOARD,module:"fournisseurs",perEdition:true},
+  events:{read:STAFF,write:BOARD,module:"manifestations",perEdition:true},
   members:{read:STAFF,write:MONEY,module:"membres"},
   warriors:{read:STAFF,write:MONEY,module:"membres"},
   budget:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
@@ -35,7 +36,7 @@ const COLS={
 };
 /* Modules qu'on peut confier à un·e responsable de pôle. */
 const DELEGABLE=[["invites","Invités & exposants"],["logistique","Logement & transport"],["programme","Programme & activités"],["benevoles","Bénévoles"],
-  ["sponsors","Sponsors & partenaires"],["fournisseurs","Fournisseurs"],["contacts","Contacts"],["finances","Budget & billetterie"],["membres","Membres & Guerriers Z"]];
+  ["sponsors","Sponsors & partenaires"],["fournisseurs","Fournisseurs"],["contacts","Contacts"],["manifestations","Manifestations"],["finances","Budget & billetterie"],["membres","Membres & Guerriers Z"]];
 
 let ME={uid:"local",name:"",email:"",role:"admin",modules:[]};
 // Accès limité : seuls les menus cochés sont visibles (les données ouvertes aux bénévoles, comme le programme, restent lisibles).
