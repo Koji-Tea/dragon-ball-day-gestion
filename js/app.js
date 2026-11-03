@@ -79,7 +79,7 @@ const ACT={
   newEdition2027:()=>recordSheet("editions",null,EDITION_2027),
   editProfile:()=>profileSheet(false),
   copyLink:()=>{const v=APP_URL();(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("Lien copié. Envoie-le à qui tu veux.","goku"),()=>toast(v))},
-  resendInvite:el=>sendInvite(el.dataset.v).then(()=>toast("Invitation renvoyée à "+el.dataset.v+".","piccolo"),()=>toast("L’invitation n’a pas pu partir. Réessaie plus tard.","freezer")),
+  resendInvite:el=>sendInvite(el.dataset.v).then(()=>toast("Invitation renvoyée à "+el.dataset.v+".","piccolo"),e=>toast(`L’invitation n’a pas pu partir (${e&&e.code||"erreur"}). Réessaie plus tard.`,"freezer")),
   newMember:()=>memberSheet(),editMember:el=>memberSheet(el.dataset.id),
   grantRequest:el=>{const r=REQUESTS.get(el.dataset.id);memberSheet(el.dataset.id,{email:r.email,name:r.name,role:"comite",modules:[]})},
   removeMember:el=>{DB.doc("users/"+el.dataset.id).delete().then(()=>toast("Accès retiré.","piccolo"),dbErr);closeSheet()},

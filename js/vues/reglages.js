@@ -41,12 +41,14 @@ async function saveMember(form){
   const btn=form.querySelector(".btn.primary");btn.disabled=true;
   try{
     if(uidM){await DB.doc("users/"+uidM).set(o);DB.doc("requests/"+uidM).delete().catch(()=>{});toast("Rôle enregistré.","piccolo")}
-    else{await createMember(o);toast(`Compte créé : ${o.email} va recevoir un e-mail.`,"piccolo")}
+    else{const r=await createMember(o);
+      if(r.mailErr)toast(`Compte créé, mais l’e-mail n’a pas pu partir (${r.mailErr.code||"erreur"}). Réessaie avec « Renvoyer l’invitation » sur sa fiche.`,"freezer");
+      else toast(`Compte créé : ${o.email} va recevoir un e-mail (regarde aussi dans les spams).`,"piccolo")}
     closeSheet();
   }catch(e){
     btn.disabled=false;
     const msg=e&&e.code==="auth/email-already-in-use"?"Ce compte existe déjà. Demande à la personne de se connecter une fois : elle apparaîtra ici dans « attend un rôle ».":
-      e&&e.code==="auth/invalid-email"?"Cette adresse e-mail n’est pas valide.":e&&e.code==="permission-denied"?"Seul·e un·e administrateur·rice peut gérer l’équipe.":"Impossible de créer le compte pour l’instant.";
+      e&&e.code==="auth/invalid-email"?"Cette adresse e-mail n’est pas valide.":e&&e.code==="permission-denied"?"Seul·e un·e administrateur·rice peut gérer l’équipe.":`Impossible de créer le compte pour l’instant (${e&&e.code||"erreur"}).`;
     toast(msg,"freezer");
   }
 }

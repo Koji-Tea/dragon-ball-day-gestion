@@ -208,15 +208,16 @@ async function createMember({email,name,role,modules}){
   const second=firebase.apps.find(a=>a.name==="ajout")||firebase.initializeApp(window.DBD_FIREBASE_CONFIG,"ajout");
   if(window.DBD_EMULATEUR&&!second._emu){second.auth().useEmulator("http://localhost:9099");second._emu=true}
   const auth2=second.auth();
-  let uidNew=null;
+  let uidNew=null,mailErr=null;
   try{
     const tmp=Array.from(crypto.getRandomValues(new Uint8Array(18)),b=>b.toString(36)).join("")+"A1!";
     const cred=await auth2.createUserWithEmailAndPassword(email,tmp);uidNew=cred.user.uid;
-    await mailInvite(auth2,email);
+    // Le compte existe déjà : même si l'e-mail échoue, on enregistre la fiche ; l'invitation pourra être renvoyée.
+    try{await mailInvite(auth2,email)}catch(e){mailErr=e}
   }finally{await auth2.signOut().catch(()=>{})}
   // welcomed:false : à sa première connexion, la personne choisit son pseudo.
   await DB.doc("users/"+uidNew).set({email,name,role,modules:modules||[],welcomed:false});
-  return uidNew;
+  return {uid:uidNew,mailErr};
 }
 // Un membre de l'équipe (identifiant) ou un nom écrit à la main.
 const memberName=u=>{if(!u)return "";const m=TEAM.get(u);return m?(m.name||m.email):u};
