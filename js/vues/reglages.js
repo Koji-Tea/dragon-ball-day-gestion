@@ -132,7 +132,7 @@ function loadDemo(){
   [["Ouverture des portes","Animation","Grande scène","09:30","10:00"],["Concert d’ouverture","Concert","Grande scène","10:00","10:45",g3.id],["Doublage : les coulisses","Conférence","Espace doublage","11:00","12:00",g1.id],
    ["Dédicaces","Dédicaces","Village des artistes","13:30","15:00",g1.id],["Atelier dessin manga","Atelier","Espace dessin","14:00","15:30",g2.id],["Dédicaces Aiko","Dédicaces","Village des artistes","15:30","17:00",g2.id],
    ["Concours cosplay","Concours cosplay","Grande scène","15:00","16:30"],["Quiz Dragon Ball","Quiz / jeu","Espace gaming","16:00","17:00"],["Remise des prix","Animation","Grande scène","16:15","17:00"]]
-    .forEach(([title,kind,room,start,end,guestId])=>put("activities",E({title,kind,room,day:D,start,end,guestId:guestId||"",cost:kind==="Concours cosplay"?300:0,published:true})));
+    .forEach(([title,kind,room,start,end,guestId])=>put("activities",E({title,kind,room,day:D,start,end,guestIds:guestId?[guestId]:[],cost:kind==="Concours cosplay"?300:0,published:true})));
   const vols=[["Léa Exemple","lea@exemple.ch","M"],["Noah Exemple","noah@exemple.ch","L"],["Mia Exemple","mia@exemple.ch","S"],["Luca Exemple","luca@exemple.ch","XL"],["Emma Exemple","emma@exemple.ch","M"]]
     .map(([name,email,size],i)=>put("volunteers",E({name,email,size,status:i<4?"Confirmé·e":"Inscrit·e"})));
   [["Montage",addDays(D,-1),"14:00","19:00",4,[0,1,3]],["Accueil & billetterie",D,"09:00","13:00",3,[0,2]],["Accueil & billetterie",D,"13:00","17:30",3,[4]],["Bar & restauration",D,"10:00","14:00",2,[1,2]],["Sécurité",D,"09:00","17:30",2,[3]]]

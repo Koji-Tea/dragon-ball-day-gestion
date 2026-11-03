@@ -14,22 +14,26 @@ defineMod({
     {k:"day",l:"Jour",type:"select",options:()=>edDays(currentEdition()).map(d=>[d,fLong(d)])},
     {k:"start",l:"Début",type:"time",req:true},
     {k:"end",l:"Fin",type:"time",req:true},
-    {k:"guestId",l:"Invité concerné",type:"select",blank:"Aucun",options:refOpts("guests")},
+    {k:"guestIds",l:"Invités concernés",type:"checks",options:refOpts("guests")},
     {k:"owner",l:"Responsable",type:"member"},
     {k:"cost",l:"Coût (matériel, lots…)",type:"money"},
     {k:"published",l:"Publié sur le site",type:"check"},
     {k:"desc",l:"Description pour le public",type:"textarea",wide:true},
     {k:"notes",l:"Notes pour l’équipe",type:"textarea",wide:true,ph:"Matériel, installation, micros…"},
   ],
-  beforeSave:o=>{if(!o.day){const e=currentEdition();o.day=e&&e.date}if(hm(o.end)<=hm(o.start))o.end=fHM(hm(o.start)+30);return o},
+  // Les anciennes fiches n'avaient qu'un invité (guestId) : on le reprend dans la liste.
+  prefill:o=>o.guestId&&!o.guestIds?{...o,guestIds:[o.guestId]}:o,
+  beforeSave:o=>{o.guestId="";if(!o.day){const e=currentEdition();o.day=e&&e.date}if(hm(o.end)<=hm(o.start))o.end=fHM(hm(o.start)+30);return o},
 });
+const actGuests=a=>a.guestIds||(a.guestId?[a.guestId]:[]);
+const actGuestNames=a=>actGuests(a).map(id=>refName("guests",id)).filter(Boolean).join(", ");
 // Conflits : deux activités qui se chevauchent dans le même lieu, ou un invité attendu à deux endroits.
 function conflicts(xs){
   const out=[];
   for(let i=0;i<xs.length;i++)for(let j=i+1;j<xs.length;j++){
     const a=xs[i],b=xs[j];if(a.day!==b.day||!(hm(a.start)<hm(b.end)&&hm(b.start)<hm(a.end)))continue;
     if(a.room&&a.room===b.room)out.push([a,b,"même lieu : "+a.room]);
-    else if(a.guestId&&a.guestId===b.guestId)out.push([a,b,refName("guests",a.guestId)+" est attendu aux deux"]);
+    else{const g=actGuests(a).find(id=>actGuests(b).includes(id));if(g)out.push([a,b,refName("guests",g)+" est attendu aux deux"])}
   }
   return out;
 }
@@ -52,7 +56,7 @@ VIEWS.programme=()=>{
       <div class="pg-hours" style="height:${H}px">${hours.map(t=>`<span style="top:${(t-from)*k}px">${fHM(t)}</span>`).join("")}</div>
       ${rooms.map(r=>`<div class="pg-col" style="height:${H}px;background-size:100% ${60*k}px">${xs.filter(a=>(a.room||rooms[0])===r).map(a=>{
         const top=(hm(a.start)-from)*k,h=Math.max(22,(hm(a.end)-hm(a.start))*k-2);
-        return `<button class="pg-act ${bad.has(a.id)?"conflict":""} ${h<48?"short":""}" title="${esc(a.title+" · "+a.start+"–"+a.end)}" style="top:${top}px;height:${h}px;--tone:${KIND_TONE[a.kind]||"var(--accent)"}" data-act="openRecord" data-mod="activities" data-id="${a.id}"><b>${esc(a.title)}</b><span>${esc(a.start)}–${esc(a.end)}${a.guestId?" · "+esc(refName("guests",a.guestId)):""}</span></button>`}).join("")}</div>`).join("")}
+        return `<button class="pg-act ${bad.has(a.id)?"conflict":""} ${h<48?"short":""}" title="${esc(a.title+" · "+a.start+"–"+a.end)}" style="top:${top}px;height:${h}px;--tone:${KIND_TONE[a.kind]||"var(--accent)"}" data-act="openRecord" data-mod="activities" data-id="${a.id}"><b>${esc(a.title)}</b><span>${esc(a.start)}–${esc(a.end)}${actGuests(a).length?" · "+esc(actGuestNames(a)):""}</span></button>`}).join("")}</div>`).join("")}
     </div></div>`;
   }else grid=emptyBox("trunks","Rien de prévu ce jour-là","Ajoute les concerts, conférences, dédicaces et concours : la grille se construit toute seule.",can?addBtn("activities","Première activité"):"");
   return head("Programme",`${esc(ed.name)} · ${plural(allx.length,"activité")}`,addBtn("activities","Activité")+`<button class="btn" data-act="exportProgramme">${ic("down")}CSV</button><button class="btn" data-act="print">Imprimer</button>`,"trunks")+

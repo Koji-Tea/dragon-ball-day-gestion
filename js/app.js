@@ -69,7 +69,7 @@ const ACT={
   copyMails:el=>{const v=el.dataset.v;(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("E-mails copiés. Colle-les dans ton message."),()=>openSheet(sheetHead("E-mails à relancer","chichi")+`<textarea readonly style="min-height:140px">${esc(v)}</textarea>`))},
   exportMod:el=>{const k=el.dataset.mod,c=MODS[k].col;exportMod(k,COLS[c].perEdition?inEdition(c):all(c),norm(MODS[k].label).replace(/[^a-z]+/g,"-"))},
   exportProgramme:()=>{const xs=inEdition("activities").sort((a,b)=>(a.day+a.start)<(b.day+b.start)?-1:1);
-    saveFile("dragon-ball-day-programme-"+today()+".csv",csv([["Jour","Début","Fin","Lieu","Activité","Type","Invité","Description"],...xs.map(a=>[a.day,a.start,a.end,a.room,a.title,a.kind,refName("guests",a.guestId),a.desc])]))},
+    saveFile("dragon-ball-day-programme-"+today()+".csv",csv([["Jour","Début","Fin","Lieu","Activité","Type","Invité","Description"],...xs.map(a=>[a.day,a.start,a.end,a.room,a.title,a.kind,actGuestNames(a),a.desc])]))},
   exportLedger:()=>saveFile("dragon-ball-day-compta-"+today()+".csv",csv([["Type","Catégorie","Libellé","Date","Montant","Payé / encaissé"],...ledger().map(l=>[l.kind,l.cat,l.label,l.date,l.amount.toFixed(2),l.paid.toFixed(2)])])),
   ticketManual:()=>ticketManualSheet(),
   delTicketLot:el=>{del("ticketing",el.dataset.id);toast("Supprimé.","goku")},
