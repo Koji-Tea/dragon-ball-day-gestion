@@ -114,6 +114,9 @@ async function connect(){
   if(window.DBD_EMULATEUR)useEmulator(firebase.app());
   db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
   const form=$("#loginForm");
+  // Arrivée depuis l'e-mail d'invitation, une fois le mot de passe choisi.
+  const invited=new URLSearchParams(location.search).get("bienvenue");
+  if(invited){$("#lgTitle").textContent="Bienvenue !";$("#lgHint").hidden=false;if(invited.includes("@"))$("#lgMail").value=invited}
   form.addEventListener("submit",e=>{
     e.preventDefault();e.stopImmediatePropagation();const err=$("#lgErr");err.hidden=true;
     firebase.auth().signInWithEmailAndPassword($("#lgMail").value.trim(),$("#lgPass").value)
@@ -122,7 +125,7 @@ async function connect(){
   $("#lgForgot").addEventListener("click",()=>{
     const m=$("#lgMail").value.trim(),err=$("#lgErr");
     if(!m){err.textContent="Écris d’abord ton e-mail ci-dessus.";err.hidden=false;return}
-    firebase.auth().sendPasswordResetEmail(m).finally(()=>{err.style.color="var(--good)";err.textContent="Si ce compte existe, un e-mail pour choisir un nouveau mot de passe vient d’être envoyé.";err.hidden=false});
+    sendInvite(m).finally(()=>{err.style.color="var(--good)";err.textContent="Si ce compte existe, un e-mail pour choisir un nouveau mot de passe vient d’être envoyé.";err.hidden=false});
   });
   const user=await new Promise(res=>{firebase.auth().onAuthStateChanged(u=>{if(u)res(u);else showLogin(true)})});
   showLogin(false);
@@ -164,6 +167,7 @@ async function connect(){
     }
   }
   ME={uid:user.uid,email:user.email,...prof,modules:prof.modules||[]};
+  if(invited)history.replaceState(null,"",location.pathname+location.hash);
   // Si un·e admin change ce rôle pendant que l'app est ouverte, on recharge pour appliquer les nouveaux droits.
   profRef.onSnapshot(s=>{if(s.metadata.fromCache||s.metadata.hasPendingWrites)return;if(!s.exists){location.reload();return}const p=s.data();if(p.role!==ME.role||String(p.modules||[])!==String(ME.modules)){location.reload();return}ME={...ME,name:p.name};changed()},()=>{});
   return db;
@@ -193,6 +197,12 @@ async function initStore(){
 const ready=()=>MODE!=="loading"&&WAIT.every(c=>LOADED.has(c));
 
 /* ---------- Équipe (administrateur·rice) ---------- */
+// L'e-mail d'invitation est celui de Firebase pour choisir un mot de passe ; son bouton « Continuer » ramène à l'app.
+const APP_URL=()=>location.origin+location.pathname;
+const inviteLink=email=>({url:APP_URL()+"?bienvenue="+encodeURIComponent(email)});
+// Si le domaine n'est pas autorisé dans Firebase pour le lien de retour, l'e-mail part quand même, sans bouton « Continuer ».
+function mailInvite(auth,email){auth.languageCode="fr";return auth.sendPasswordResetEmail(email,inviteLink(email)).catch(e=>{if(/continue-uri|domain/.test(e&&e.code||""))return auth.sendPasswordResetEmail(email);throw e})}
+const sendInvite=email=>mailInvite(firebase.auth(),email);
 // Crée le compte de connexion sans déconnecter l'admin : on passe par une deuxième instance Firebase.
 async function createMember({email,name,role,modules}){
   const second=firebase.apps.find(a=>a.name==="ajout")||firebase.initializeApp(window.DBD_FIREBASE_CONFIG,"ajout");
@@ -202,9 +212,10 @@ async function createMember({email,name,role,modules}){
   try{
     const tmp=Array.from(crypto.getRandomValues(new Uint8Array(18)),b=>b.toString(36)).join("")+"A1!";
     const cred=await auth2.createUserWithEmailAndPassword(email,tmp);uidNew=cred.user.uid;
-    await auth2.sendPasswordResetEmail(email);
+    await mailInvite(auth2,email);
   }finally{await auth2.signOut().catch(()=>{})}
-  await DB.doc("users/"+uidNew).set({email,name,role,modules:modules||[]});
+  // welcomed:false : à sa première connexion, la personne choisit son pseudo.
+  await DB.doc("users/"+uidNew).set({email,name,role,modules:modules||[],welcomed:false});
   return uidNew;
 }
 // Un membre de l'équipe (identifiant) ou un nom écrit à la main.

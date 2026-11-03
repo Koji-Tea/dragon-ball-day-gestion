@@ -5,6 +5,7 @@ function teamCard(){
   const members=[...TEAM.values()].sort((a,b)=>(a.name||a.email).localeCompare(b.name||b.email,"fr"));
   const reqs=[...REQUESTS.values()].filter(r=>!TEAM.has(r.uid));
   return `<div class="card"><div class="card-head"><h2>Équipe et rôles</h2><button class="btn primary sm" data-act="newMember">${ic("plus")}Ajouter une personne</button></div>
+  <div class="row" style="margin-bottom:10px"><span class="small grow">Adresse de l’app : <b>${esc(APP_URL().replace(/^https?:\/\//,"").replace(/\/$/,""))}</b></span><button class="btn sm" data-act="copyLink">${ic("link")}Copier le lien</button></div>
   ${reqs.length?`<div class="banner" style="margin-bottom:10px"><img alt="" src="${IMG.piccolo}"><div class="grow small"><b>${plural(reqs.length,"personne attend","personnes attendent")} un rôle</b>${reqs.map(r=>`<div class="row" style="margin-top:6px"><span class="grow">${esc(r.email)}</span><button class="btn sm" data-act="grantRequest" data-id="${r.uid}">Donner un rôle</button></div>`).join("")}</div></div>`:""}
   <div class="list">${members.map(m=>`<div class="item click" data-act="editMember" data-id="${m.uid}"><span class="avatar">${esc(initials(m.name||m.email))}</span><div class="main"><b>${esc(m.name||m.email)}${m.uid===ME.uid?" (toi)":""}</b><span class="tiny muted">${esc(m.email)}${m.role==="responsable"?" · "+((m.modules||[]).length?"":"aucun menu")+esc(m.modules.map(k=>(DELEGABLE.find(d=>d[0]===k)||[k,k])[1]).join(", ")):""}</span></div><span class="pill ${m.role==="admin"?"bad":m.role==="benevole"?"neutral":"info"}">${esc(ROLES[m.role]?.l||m.role)}</span></div>`).join("")}</div>
   <details style="margin-top:12px"><summary class="small" style="cursor:pointer;font-weight:800">Qui peut faire quoi ?</summary><dl class="kv small" style="margin-top:8px">${Object.entries(ROLES).map(([k,r])=>`<dt>${esc(r.l)}</dt><dd>${esc(r.d)}</dd>`).join("")}</dl></details></div>`;
@@ -13,12 +14,26 @@ function memberSheet(uidM,preset){
   const m=uidM?(TEAM.get(uidM)||{uid:uidM,...(preset||{})}):{role:"comite",modules:[]};const existing=!!(uidM&&TEAM.has(uidM));const self=uidM===ME.uid;
   openSheet(sheetHead(existing?esc(m.name||m.email):uidM?"Donner un rôle":"Ajouter une personne","piccolo")+
   `<form data-submit="member" data-id="${uidM||""}"><div class="fields">
-    <div class="f"><label for="mName">Prénom et nom</label><input id="mName" name="name" required value="${esc(m.name||"")}"></div>
+    <div class="f"><label for="mName">Nom ou pseudo</label><input id="mName" name="name" required value="${esc(m.name||"")}"></div>
     <div class="f"><label for="mMail">E-mail</label><input id="mMail" name="email" type="email" required value="${esc(m.email||"")}" ${uidM?"readonly":""}></div>
     <div class="f wide"><label for="mRole">Rôle</label><select id="mRole" name="role" ${self?"disabled":""}>${Object.entries(ROLES).map(([k,r])=>opt(k,r.l+" – "+r.d,m.role)).join("")}</select>${self?`<span class="tiny muted">Tu ne peux pas changer ton propre rôle.</span>`:""}</div>
     <div class="f wide"><span>Menus accessibles (pour un accès limité)</span><span class="tiny muted" style="font-weight:600">Choisis le rôle « Accès limité », puis coche les menus que cette personne peut voir et modifier.</span><div class="checks">${DELEGABLE.map(([k,l])=>`<label class="check"><input type="checkbox" name="modules" value="${k}" ${(m.modules||[]).includes(k)?"checked":""}> ${esc(l)}</label>`).join("")}</div></div>
-  </div>${uidM?"":`<p class="small muted" style="margin:12px 0 0">Un compte est créé pour cette personne et elle reçoit un e-mail pour choisir son mot de passe.</p>`}
+  </div>${uidM?"":`<p class="small muted" style="margin:12px 0 0">Un compte est créé et la personne reçoit un e-mail d’invitation : elle choisit son mot de passe, se connecte, puis choisit son pseudo.</p>`}
+  ${existing&&!self?`<div class="row" style="margin-top:12px"><button type="button" class="btn sm" data-act="resendInvite" data-v="${esc(m.email)}">${ic("mail")}Renvoyer l’invitation</button><span class="tiny muted grow">Nouvel e-mail pour choisir un mot de passe.</span></div>`:""}
   <div class="formfoot">${existing&&!self?`<button type="button" class="btn danger" data-act="removeMember" data-id="${uidM}" data-confirm="Oui, retirer l’accès">Retirer l’accès</button>`:"<span></span>"}<button class="btn primary">${uidM?"Enregistrer":"Créer le compte"}</button></div></form>`);
+}
+// Mon compte : chacun choisit son pseudo (proposé à la première connexion).
+function profileSheet(first){
+  openSheet(sheetHead(first?"Bienvenue dans l’équipe !":"Mon compte","goku")+
+  `${first?`<p class="small" style="margin-top:0">Choisis le pseudo que l’équipe verra dans l’application.</p>`:""}
+  <form data-submit="profile"><div class="fields"><div class="f wide"><label for="pName">Pseudo</label><input id="pName" name="name" required maxlength="40" value="${esc(ME.name||"")}"></div>
+  <div class="f wide"><span>E-mail</span><span class="small muted">${esc(ME.email)}</span></div></div>
+  <div class="formfoot"><span></span><button class="btn primary">${first?"C’est parti !":"Enregistrer"}</button></div></form>`);
+}
+function saveProfile(form){
+  const name=String(new FormData(form).get("name")||"").trim();if(!name)return;
+  DB.doc("users/"+ME.uid).update({name,welcomed:true}).then(()=>{ME={...ME,name,welcomed:true};closeSheet();toast(`Salut ${name} !`,"goku");changed()})
+    .catch(()=>toast("Le pseudo n’a pas pu être enregistré. Réessaie.","freezer"));
 }
 async function saveMember(form){
   const fd=new FormData(form),uidM=form.dataset.id;
@@ -49,7 +64,7 @@ VIEWS.reglages=()=>head("Réglages","L’association, l’équipe et les sauvega
     ${isAdmin()?`<div class="f" style="margin-top:14px"><label for="importFile">Restaurer une sauvegarde (.json)</label><input id="importFile" type="file" accept=".json,application/json" data-change="import"></div>`:""}</div>`:""}
   ${isAdmin()?`<div class="card"><h2>Données d’exemple</h2><p class="small muted" style="margin-top:0">Des invités, sponsors, bénévoles, ventes et tâches fictifs pour découvrir l’application. Ils sont marqués et s’effacent d’un clic sans toucher aux vraies données.</p>
     <div class="row">${hasDemo()?`<button class="btn danger" data-act="clearDemo" data-confirm="Oui, effacer">Effacer les exemples</button>`:`<button class="btn" data-act="loadDemo">Charger les exemples</button>`}</div></div>`:""}
-  <div class="card"><h2>Mon compte</h2>${MODE==="cloud"?`<p class="small muted" style="margin-top:0">Connecté·e avec ${esc(ME.email)} · ${esc(ROLES[ME.role].l)}</p><button class="btn" data-act="logout">Se déconnecter</button>`:`<p class="small muted" style="margin:0">Mode essai : pas de compte, toutes les données restent dans ce navigateur.</p>`}</div>
+  <div class="card"><h2>Mon compte</h2>${MODE==="cloud"?`<p class="small muted" style="margin-top:0"><b style="color:var(--ink)">${esc(ME.name||ME.email)}</b> · connecté·e avec ${esc(ME.email)} · ${esc(ROLES[ME.role].l)}</p><div class="row"><button class="btn" data-act="editProfile">Changer mon pseudo</button><button class="btn" data-act="logout">Se déconnecter</button></div>`:`<p class="small muted" style="margin:0">Mode essai : pas de compte, toutes les données restent dans ce navigateur.</p>`}</div>
   </div>`;
 
 /* ---------- Données d'exemple (fictives) ---------- */
