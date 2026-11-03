@@ -34,8 +34,11 @@ window.addEventListener("hashchange",()=>{UI.q="";UI.filter="";nav();window.scro
 const tabsShown=()=>TAB.filter(k=>navItems().find(n=>n[0]===k)).slice(0,3);
 
 let rT;function scheduleRender(){cancelAnimationFrame(rT);rT=requestAnimationFrame(nav)}
+let welcomeShown=false;
 function render(){
   if(!ready())return;
+  // Première connexion après une invitation : on propose de choisir son pseudo.
+  if(!welcomeShown&&MODE==="cloud"&&ME.welcomed===false){welcomeShown=true;setTimeout(()=>profileSheet(true),300)}
   const a=document.activeElement,aid=a&&a.id,sel=a&&a.selectionStart;
   $("#main").innerHTML=(VIEWS[route]||VIEWS.accueil)();
   if(aid){const el=document.getElementById(aid);if(el&&el!==a&&!$("#sheetRoot").contains(el)){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
@@ -74,6 +77,9 @@ const ACT={
   toggleTask:el=>{const t=get("tasks",el.dataset.id);if(!t)return;const done=t.status!=="Fait";put("tasks",{...t,status:done?"Fait":"À faire",doneAt:done?today():null});if(done)toast("Bien joué ! Une tâche de moins.","trunks")},
   pickEdition:el=>{pickEdition(el.dataset.id);toast("Édition affichée : "+get("editions",el.dataset.id).name)},
   newEdition2027:()=>recordSheet("editions",null,EDITION_2027),
+  editProfile:()=>profileSheet(false),
+  copyLink:()=>{const v=APP_URL();(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("Lien copié. Envoie-le à qui tu veux.","goku"),()=>toast(v))},
+  resendInvite:el=>sendInvite(el.dataset.v).then(()=>toast("Invitation renvoyée à "+el.dataset.v+".","piccolo"),()=>toast("L’invitation n’a pas pu partir. Réessaie plus tard.","freezer")),
   newMember:()=>memberSheet(),editMember:el=>memberSheet(el.dataset.id),
   grantRequest:el=>{const r=REQUESTS.get(el.dataset.id);memberSheet(el.dataset.id,{email:r.email,name:r.name,role:"comite",modules:[]})},
   removeMember:el=>{DB.doc("users/"+el.dataset.id).delete().then(()=>toast("Accès retiré.","piccolo"),dbErr);closeSheet()},
@@ -85,7 +91,7 @@ const ACT={
     saveFile("dragon-ball-day-contacts-"+today()+".csv",csv(rows))},
 };
 // Actions qui modifient des données : vérifiées avant exécution (la base refuse de toute façon ce que le rôle n'autorise pas).
-const WRITES={approveProposal:"admin",refuseProposal:"admin",toggleTask:"tasks",delRecord:null,ticketManual:"ticketing",delTicketLot:"ticketing",newEdition2027:"editions",loadDemo:"admin",clearDemo:"admin",newMember:"admin",editMember:"admin",grantRequest:"admin",removeMember:"admin"};
+const WRITES={resendInvite:"admin",approveProposal:"admin",refuseProposal:"admin",toggleTask:"tasks",delRecord:null,ticketManual:"ticketing",delTicketLot:"ticketing",newEdition2027:"editions",loadDemo:"admin",clearDemo:"admin",newMember:"admin",editMember:"admin",grantRequest:"admin",removeMember:"admin"};
 document.addEventListener("click",e=>{
   const el=e.target.closest("[data-act]");
   if(e.target.classList&&e.target.classList.contains("scrim")){closeSheet();return}
@@ -115,6 +121,7 @@ document.addEventListener("submit",e=>{
   const kind=f.dataset.submit;
   if(kind==="record"){const m=MODS[f.dataset.mod];if(!canWrite(m.col)&&!canPropose(m.col)){toast("Ton rôle ne permet pas cette modification.","freezer");return}saveRecord(f.dataset.mod,f)}
   if(kind==="member"&&isAdmin())saveMember(f);
+  if(kind==="profile"&&MODE==="cloud")saveProfile(f);
   if(kind==="settings"&&isAdmin()){const d=Object.fromEntries(new FormData(f));putCfg({assoName:d.assoName.trim(),assoAddress:d.assoAddress.trim(),website:d.website.trim(),memberFee:+d.memberFee||0});toast("Réglages enregistrés.","bulma")}
   if(kind==="ticketImport"&&canWrite("ticketing"))saveTicketImport(f);
   if(kind==="ticketManual"&&canWrite("ticketing"))saveTicketManual(f);
