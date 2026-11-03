@@ -115,6 +115,7 @@ document.addEventListener("change",e=>{
   if(c==="file"&&t.files[0]){loadFile(t.files[0],t.dataset.target,t.dataset.k);t.value=""}
   if(c==="taskPole"){UI.taskPole=t.value;render()}
   if(c==="taskMine"){UI.taskMine=t.checked;ls("dbday-mine",t.checked?"1":"0");render()}
+  if(c==="volFile"&&t.files[0]&&canWrite("volunteers")){const file=t.files[0];readCSVFile(file,txt=>volImportSheet(file.name,txt));t.value=""}
   if(c==="ticketFile"&&t.files[0]&&canWrite("ticketing")){const file=t.files[0],r=new FileReader();r.onload=()=>{let txt=r.result;if(txt.includes("\uFFFD")){const r2=new FileReader();r2.onload=()=>ticketImportSheet(file.name,r2.result);r2.readAsText(file,"windows-1252");return}ticketImportSheet(file.name,txt)};r.readAsText(file);t.value=""}
   if(c==="import"&&t.files[0]){const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(j.app!=="dragon-ball-day"||!j.data)throw 0;Object.keys(COLS).forEach(col=>(j.data[col]||[]).forEach(o=>put(col,o)));if(j.cfg)putCfg(j.cfg);toast("Sauvegarde restaurée.")}catch(err){toast("Ce fichier n’est pas une sauvegarde Dragon Ball Day.","freezer")}};r.readAsText(t.files[0])}
 });
@@ -126,6 +127,7 @@ document.addEventListener("submit",e=>{
   if(kind==="profile"&&MODE==="cloud")saveProfile(f);
   if(kind==="settings"&&isAdmin()){const d=Object.fromEntries(new FormData(f));putCfg({assoName:d.assoName.trim(),assoAddress:d.assoAddress.trim(),website:d.website.trim(),memberFee:+d.memberFee||0});toast("Réglages enregistrés.","bulma")}
   if(kind==="ticketImport"&&canWrite("ticketing"))saveTicketImport(f);
+  if(kind==="volImport"&&canWrite("volunteers"))saveVolImport(f);
   if(kind==="ticketManual"&&canWrite("ticketing"))saveTicketManual(f);
 });
 
