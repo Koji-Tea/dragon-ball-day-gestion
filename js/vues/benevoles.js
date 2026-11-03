@@ -78,9 +78,9 @@ VIEWS.benevoles=()=>{
       ${sizes.length?`<p class="small muted" style="margin:0 0 10px">T-shirts : ${sizes.map(([z,n])=>`${z} × ${n}`).join(" · ")}</p>`:""}
       ${xs.length?`<div class="list">${xs.map(v=>rowItem("volunteers",v,{title:v.name,sub:esc([v.phone||v.email,plural(count(v.id),"créneau","créneaux"),v.minor?"mineur·e":""].filter(Boolean).join(" · ")),
         end:statusPill(v.status,{"Confirmé·e":"good","Inscrit·e":"info","Désisté·e":"neutral"})})).join("")}</div>`
-      :emptyBox("piccolo",vs.length?"Personne ne correspond":"Pas encore de bénévole","Inscris les bénévoles avec leur e-mail : s’ils ont un compte « Bénévole », ils verront leur planning.",vs.length?"":addBtn("volunteers","Premier·e bénévole"))}`;
+      :emptyBox("piccolo",vs.length?"Personne ne correspond":"Pas encore de bénévole","Inscris les bénévoles avec leur e-mail : s’ils ont un compte « Bénévole », ils verront leur planning. Tu peux aussi importer une liste (CSV avec prénom, nom, téléphone et e-mail).",vs.length?"":addBtn("volunteers","Premier·e bénévole"))}`;
   }
-  return head("Bénévoles",esc(ed.name),addBtn("shifts","Créneau",tab==="planning"?"primary":"")+addBtn("volunteers","Bénévole",tab==="planning"?"":"primary")+`<button class="btn" data-act="exportMod" data-mod="${tab==="planning"?"shifts":"volunteers"}">${ic("down")}CSV</button>`,"piccolo")+
+  return head("Bénévoles",esc(ed.name),addBtn("shifts","Créneau",tab==="planning"?"primary":"")+addBtn("volunteers","Bénévole",tab==="planning"?"":"primary")+(canWrite("volunteers")?`<label class="btn" for="volFile">${ic("upload")}Importer</label><input id="volFile" type="file" accept=".csv,text/csv,text/plain" data-change="volFile" hidden>`:"")+`<button class="btn" data-act="exportMod" data-mod="${tab==="planning"?"shifts":"volunteers"}">${ic("down")}CSV</button>`,"piccolo")+
   `<div class="stack"><div class="kpis">
     <div class="kpi"><span class="label">Bénévoles</span><b>${active.length}</b><small>${active.filter(v=>v.status==="Confirmé·e").length} confirmé·es</small></div>
     <div class="kpi"><span class="label">Postes pourvus</span><b>${filled}/${needed}</b><small>${needed?Math.round(filled/needed*100)+" %":"aucun créneau"}</small></div>
@@ -88,3 +88,41 @@ VIEWS.benevoles=()=>{
     <div class="kpi"><span class="label">Heures</span><b>${num(sum(ss,s=>(s.volunteerIds||[]).length*(hm(s.end)-hm(s.start)))/60)}</b><small>de bénévolat prévues</small></div></div>
   <div class="card"><div style="margin-bottom:14px">${segTabs("benevoles",[["planning",`Planning · ${ss.length}`],["people",`Bénévoles · ${vs.length}`]],"planning")}</div>${body}</div></div>`;
 };
+
+/* --- Import d'une liste de bénévoles (CSV : prénom, nom, téléphone, e-mail) --- */
+// Excel enregistre souvent en Windows-1252 : si l'UTF-8 donne des caractères cassés, on relit le fichier.
+function readCSVFile(file,cb){const r=new FileReader();r.onload=()=>{if(String(r.result).includes("�")){const r2=new FileReader();r2.onload=()=>cb(r2.result);r2.readAsText(file,"windows-1252")}else cb(r.result)};r.readAsText(file)}
+const VOL_GUESS={first:/pr[ée]nom|first/i,last:/^\s*(nom|nom de famille|last ?name|surname|family)\s*$/i,full:/nom complet|full ?name|^\s*name\s*$/i,phone:/t[ée]l|phone|mobile|natel|portable/i,email:/mail|courriel/i};
+let VI=null;
+function volImportSheet(name,txt){
+  const rows=parseCSV(txt);if(!rows.length){toast("Ce fichier est vide.","freezer");return}
+  const hd=rows[0].map(h=>h.trim()),guess={};
+  Object.entries(VOL_GUESS).forEach(([k,re])=>{guess[k]=hd.findIndex((h,j)=>re.test(h)&&!Object.values(guess).includes(j))});
+  if(guess.last<0&&guess.full<0)guess.last=hd.findIndex((h,j)=>/nom|name/i.test(h)&&j!==guess.first);
+  if(guess.full<0||guess.first>=0)guess.full=-1;
+  const titled=Object.values(guess).some(i=>i>=0);
+  VI={name,hd,rows};
+  const sel=(k,l)=>`<div class="f"><label for="vi_${k}">${l}</label><select id="vi_${k}" name="${k}"><option value="-1">Aucune</option>${hd.map((h,i)=>opt(String(i),(titled?h:"")||"Colonne "+(i+1),String(guess[k]))).join("")}</select></div>`;
+  openSheet(sheetHead("Importer des bénévoles","piccolo")+`<form data-submit="volImport"><p class="small muted" style="margin-top:0"><b>${esc(name)}</b> · ${plural(rows.length-(titled?1:0),"ligne")}. Vérifie quelle colonne correspond à quoi.</p>
+    <div class="fields">${sel("first","Prénom")}${sel("last","Nom")}${sel("phone","Téléphone")}${sel("email","E-mail")}${guess.full>=0?sel("full","Prénom et nom ensemble"):`<input type="hidden" name="full" value="-1">`}</div>
+    <div class="tbl-wrap" style="margin-top:14px"><table class="tbl"><thead><tr>${hd.slice(0,6).map((h,i)=>`<th>${esc(titled?h:"Colonne "+(i+1))}</th>`).join("")}</tr></thead><tbody>${rows.slice(titled?1:0,(titled?1:0)+4).map(r=>`<tr>${r.slice(0,6).map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <label class="check" style="margin-top:14px"><input type="checkbox" name="titled" ${titled?"checked":""}> La première ligne contient les titres des colonnes</label>
+    <p class="tiny muted" style="margin:8px 0 0">Les bénévoles déjà inscrit·es (même e-mail ou même nom) ne sont pas ajouté·es une deuxième fois.</p>
+    <div class="formfoot"><span></span><button class="btn primary">Importer</button></div></form>`);
+}
+function saveVolImport(form){
+  const ed=currentEdition();if(!ed||!VI)return;
+  const f=Object.fromEntries(new FormData(form)),ix=k=>+f[k],cell=(r,k)=>ix(k)>=0?String(r[ix(k)]||"").trim():"";
+  const known=inEdition("volunteers"),mails=new Set(known.map(v=>(v.email||"").toLowerCase()).filter(Boolean)),names=new Set(known.map(v=>norm(v.name||"")));
+  let added=0,dup=0,empty=0;
+  (f.titled?VI.rows.slice(1):VI.rows).forEach(r=>{
+    const name=(cell(r,"full")||[cell(r,"first"),cell(r,"last")].filter(Boolean).join(" ")).replace(/\s+/g," ").trim(),email=cell(r,"email").toLowerCase(),phone=cell(r,"phone");
+    if(!name&&!email){empty++;return}
+    if((email&&mails.has(email))||(name&&names.has(norm(name)))){dup++;return}
+    put("volunteers",{editionId:ed.id,name:name||email,email,phone,status:"Inscrit·e"});
+    if(email)mails.add(email);if(name)names.add(norm(name));added++;
+  });
+  VI=null;closeSheet();
+  toast(`${plural(added,"bénévole ajouté·e","bénévoles ajouté·es")}${dup?` · ${plural(dup,"déjà inscrit·e","déjà inscrit·es")}`:""}${empty?` · ${plural(empty,"ligne vide","lignes vides")}`:""}.`,"piccolo");
+  UI.tab.benevoles="people";render();
+}
