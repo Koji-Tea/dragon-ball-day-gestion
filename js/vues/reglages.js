@@ -18,36 +18,64 @@ function memberSheet(uidM,preset){
     <div class="f"><label for="mMail">E-mail</label><input id="mMail" name="email" type="email" required value="${esc(m.email||"")}" ${uidM?"readonly":""}></div>
     <div class="f wide"><label for="mRole">Rôle</label><select id="mRole" name="role" ${self?"disabled":""}>${Object.entries(ROLES).map(([k,r])=>opt(k,r.l+" – "+r.d,m.role)).join("")}</select>${self?`<span class="tiny muted">Tu ne peux pas changer ton propre rôle.</span>`:""}</div>
     <div class="f wide"><span>Menus accessibles (pour un accès limité)</span><span class="tiny muted" style="font-weight:600">Choisis le rôle « Accès limité », puis coche les menus que cette personne peut voir et modifier.</span><div class="checks">${DELEGABLE.map(([k,l])=>`<label class="check"><input type="checkbox" name="modules" value="${k}" ${(m.modules||[]).includes(k)?"checked":""}> ${esc(l)}</label>`).join("")}</div></div>
-  </div>${uidM?"":`<p class="small muted" style="margin:12px 0 0">Un compte est créé et la personne reçoit un e-mail d’invitation : elle choisit son mot de passe, se connecte, puis choisit son pseudo.</p>`}
-  ${existing&&!self?`<div class="row" style="margin-top:12px"><button type="button" class="btn sm" data-act="resendInvite" data-v="${esc(m.email)}">${ic("mail")}Renvoyer l’invitation</button><span class="tiny muted grow">Nouvel e-mail pour choisir un mot de passe.</span></div>`:""}
+  </div>${uidM?"":`<p class="small muted" style="margin:12px 0 0">Un compte est créé avec un mot de passe provisoire. Tu reçois ensuite un message d’invitation tout prêt à envoyer à la personne (e-mail, WhatsApp…).</p>`}
+  ${existing&&!self&&m.welcomed===false?`<div class="row" style="margin-top:12px"><button type="button" class="btn sm" data-act="showInvite" data-id="${uidM}">${ic("mail")}Revoir l’invitation</button><span class="tiny muted grow">Pas encore connecté·e.</span></div>`:""}
   <div class="formfoot">${existing&&!self?`<button type="button" class="btn danger" data-act="removeMember" data-id="${uidM}" data-confirm="Oui, retirer l’accès">Retirer l’accès</button>`:"<span></span>"}<button class="btn primary">${uidM?"Enregistrer":"Créer le compte"}</button></div></form>`);
 }
-// Mon compte : chacun choisit son pseudo (proposé à la première connexion).
+// L'invitation à envoyer soi-même : copier, e-mail ou partage (WhatsApp…).
+function inviteSheet(inv){
+  const txt=inviteText(inv);UI.inviteText=txt;
+  openSheet(sheetHead("Invitation à envoyer","piccolo")+
+  `<p class="small" style="margin-top:0">Le compte de <b>${esc(inv.name||inv.email)}</b> est prêt. Envoie-lui ce message, depuis ta messagerie ou WhatsApp :</p>
+  <textarea readonly style="min-height:190px">${esc(txt)}</textarea>
+  <div class="row" style="margin-top:12px"><button type="button" class="btn primary" data-act="copyInvite">${ic("clip")}Copier le message</button>
+  <a class="btn" href="mailto:${esc(inv.email)}?subject=${encodeURIComponent("Ton accès à l’app Dragon Ball Day")}&body=${encodeURIComponent(txt)}">${ic("mail")}Envoyer par e-mail</a>
+  ${navigator.share?`<button type="button" class="btn" data-act="shareInvite">${ic("link")}Partager</button>`:""}</div>
+  <p class="tiny muted" style="margin:12px 0 0">Tu peux revoir ce message depuis sa fiche tant qu’elle ne s’est pas connectée.</p>`);
+}
+function showInvite(uidM){
+  DB.doc("invites/"+uidM).get().then(s=>{if(s.exists)inviteSheet(s.data());else toast("Cette invitation n’est plus disponible : la personne s’est sans doute déjà connectée.","piccolo")}).catch(()=>toast("Invitation introuvable.","freezer"));
+}
+// Mon compte : pseudo et mot de passe (les deux sont demandés à la première connexion).
 function profileSheet(first){
   openSheet(sheetHead(first?"Bienvenue dans l’équipe !":"Mon compte","goku")+
-  `${first?`<p class="small" style="margin-top:0">Choisis le pseudo que l’équipe verra dans l’application.</p>`:""}
-  <form data-submit="profile"><div class="fields"><div class="f wide"><label for="pName">Pseudo</label><input id="pName" name="name" required maxlength="40" value="${esc(ME.name||"")}"></div>
+  `${first?`<p class="small" style="margin-top:0">Choisis le pseudo que l’équipe verra, et ton propre mot de passe à la place du mot de passe provisoire.</p>`:""}
+  <form data-submit="profile" data-first="${first?1:""}"><div class="fields"><div class="f wide"><label for="pName">Pseudo</label><input id="pName" name="name" required maxlength="40" value="${esc(ME.name||"")}"></div>
+  <div class="f"><label for="pPass">${first?"Nouveau mot de passe":"Nouveau mot de passe (facultatif)"}</label><input id="pPass" name="pass" type="password" autocomplete="new-password" minlength="6" ${first?"required":""}></div>
+  <div class="f"><label for="pPass2">Encore une fois</label><input id="pPass2" name="pass2" type="password" autocomplete="new-password" minlength="6" ${first?"required":""}></div>
   <div class="f wide"><span>E-mail</span><span class="small muted">${esc(ME.email)}</span></div></div>
   <div class="formfoot"><span></span><button class="btn primary">${first?"C’est parti !":"Enregistrer"}</button></div></form>`);
 }
-function saveProfile(form){
-  const name=String(new FormData(form).get("name")||"").trim();if(!name)return;
-  DB.doc("users/"+ME.uid).update({name,welcomed:true}).then(()=>{ME={...ME,name,welcomed:true};closeSheet();toast(`Salut ${name} !`,"goku");changed()})
-    .catch(()=>toast("Le pseudo n’a pas pu être enregistré. Réessaie.","freezer"));
+async function saveProfile(form){
+  const fd=new FormData(form),name=String(fd.get("name")||"").trim(),pass=String(fd.get("pass")||""),pass2=String(fd.get("pass2")||"");
+  if(!name)return;
+  if(pass||pass2){
+    if(pass!==pass2){toast("Les deux mots de passe ne sont pas identiques.","freezer");return}
+    if(pass.length<6){toast("Le mot de passe doit faire au moins 6 caractères.","freezer");return}
+  }
+  const btn=form.querySelector(".btn.primary");btn.disabled=true;
+  try{
+    if(pass)await firebase.auth().currentUser.updatePassword(pass);
+    await DB.doc("users/"+ME.uid).update({name,welcomed:true});
+    if(pass)DB.doc("invites/"+ME.uid).delete().catch(()=>{});
+    ME={...ME,name,welcomed:true};closeSheet();toast(form.dataset.first?`Salut ${name} ! Ton compte est prêt.`:"C’est enregistré.","goku");changed();
+  }catch(e){
+    btn.disabled=false;
+    toast(e&&e.code==="auth/requires-recent-login"?"Pour changer ton mot de passe, déconnecte-toi puis reconnecte-toi, et réessaie.":
+      e&&e.code==="auth/weak-password"?"Ce mot de passe est trop simple. Choisis-en un plus long.":"Ce n’a pas pu être enregistré. Réessaie.","freezer");
+  }
 }
 async function saveMember(form){
   const fd=new FormData(form),uidM=form.dataset.id;
   const o={name:String(fd.get("name")).trim(),email:String(fd.get("email")).trim(),role:fd.get("role")||(TEAM.get(uidM)||{}).role,modules:fd.getAll("modules")};
   const btn=form.querySelector(".btn.primary");btn.disabled=true;
   try{
-    if(uidM){await DB.doc("users/"+uidM).set(o);DB.doc("requests/"+uidM).delete().catch(()=>{});toast("Rôle enregistré.","piccolo")}
-    else{const r=await createMember(o);
-      if(r.mailErr)toast(`Compte créé, mais l’e-mail n’a pas pu partir (${r.mailErr.code||"erreur"}). Réessaie avec « Renvoyer l’invitation » sur sa fiche.`,"freezer");
-      else toast(`Compte créé : ${o.email} va recevoir un e-mail (regarde aussi dans les spams).`,"piccolo")}
+    if(uidM){await DB.doc("users/"+uidM).set(o,{merge:true});DB.doc("requests/"+uidM).delete().catch(()=>{});toast("Rôle enregistré.","piccolo")}
+    else{const r=await createMember(o);inviteSheet(r);return}
     closeSheet();
   }catch(e){
     btn.disabled=false;
-    const msg=e&&e.code==="auth/email-already-in-use"?"Ce compte existe déjà. Demande à la personne de se connecter une fois : elle apparaîtra ici dans « attend un rôle ».":
+    const msg=e&&e.code==="auth/email-already-in-use"?"Un compte existe déjà avec cet e-mail. Supprime-le dans la console Firebase (Authentication → Users), puis réessaie.":
       e&&e.code==="auth/invalid-email"?"Cette adresse e-mail n’est pas valide.":e&&e.code==="permission-denied"?"Seul·e un·e administrateur·rice peut gérer l’équipe.":`Impossible de créer le compte pour l’instant (${e&&e.code||"erreur"}).`;
     toast(msg,"freezer");
   }
