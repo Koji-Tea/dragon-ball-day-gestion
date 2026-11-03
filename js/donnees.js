@@ -125,7 +125,7 @@ async function connect(){
   $("#lgForgot").addEventListener("click",()=>{
     const m=$("#lgMail").value.trim(),err=$("#lgErr");
     if(!m){err.textContent="Écris d’abord ton e-mail ci-dessus.";err.hidden=false;return}
-    sendInvite(m).finally(()=>{err.style.color="var(--good)";err.textContent="Si ce compte existe, un e-mail pour choisir un nouveau mot de passe vient d’être envoyé.";err.hidden=false});
+    firebase.auth().sendPasswordResetEmail(m).finally(()=>{err.style.color="var(--good)";err.textContent="Si ce compte existe, un e-mail pour choisir un nouveau mot de passe vient d’être envoyé.";err.hidden=false});
   });
   const user=await new Promise(res=>{firebase.auth().onAuthStateChanged(u=>{if(u)res(u);else showLogin(true)})});
   showLogin(false);
@@ -197,26 +197,25 @@ async function initStore(){
 const ready=()=>MODE!=="loading"&&WAIT.every(c=>LOADED.has(c));
 
 /* ---------- Équipe (administrateur·rice) ---------- */
-// L'e-mail d'invitation est celui de Firebase pour choisir un mot de passe ; son bouton « Continuer » ramène à l'app.
+// Firebase n'envoie pas les e-mails de ce projet : l'admin envoie lui-même l'invitation (lien, e-mail, mot de passe provisoire).
+// À sa première connexion, la personne choisit son pseudo et son propre mot de passe.
 const APP_URL=()=>location.origin+location.pathname;
-const inviteLink=email=>({url:APP_URL()+"?bienvenue="+encodeURIComponent(email)});
-// Si le domaine n'est pas autorisé dans Firebase pour le lien de retour, l'e-mail part quand même, sans bouton « Continuer ».
-function mailInvite(auth,email){auth.languageCode="fr";return auth.sendPasswordResetEmail(email,inviteLink(email)).catch(e=>{if(/continue-uri|domain/.test(e&&e.code||""))return auth.sendPasswordResetEmail(email);throw e})}
-const sendInvite=email=>mailInvite(firebase.auth(),email);
+const inviteUrl=email=>APP_URL()+"?bienvenue="+encodeURIComponent(email);
+const tempPassword=()=>{const w=["Goku","Vegeta","Bulma","Piccolo","Trunks","Gohan","Krilin","Chichi"],r=crypto.getRandomValues(new Uint32Array(2));return w[r[0]%w.length]+"-"+String(1000+r[1]%9000)};
+const inviteText=({name,email,password})=>`Salut ${name||""} !\n\nJe t’ai créé un compte sur l’application de gestion du Dragon Ball Day.\n\n1. Ouvre ce lien : ${inviteUrl(email)}\n2. Connecte-toi avec ton e-mail ${email} et le mot de passe provisoire : ${password}\n3. Choisis ensuite ton pseudo et ton propre mot de passe.\n\nÀ bientôt !`;
 // Crée le compte de connexion sans déconnecter l'admin : on passe par une deuxième instance Firebase.
 async function createMember({email,name,role,modules}){
   const second=firebase.apps.find(a=>a.name==="ajout")||firebase.initializeApp(window.DBD_FIREBASE_CONFIG,"ajout");
   if(window.DBD_EMULATEUR&&!second._emu){second.auth().useEmulator("http://localhost:9099");second._emu=true}
-  const auth2=second.auth();
+  const auth2=second.auth(),password=tempPassword();
   let uidNew=null;
-  try{
-    const tmp=Array.from(crypto.getRandomValues(new Uint8Array(18)),b=>b.toString(36)).join("")+"A1!";
-    const cred=await auth2.createUserWithEmailAndPassword(email,tmp);uidNew=cred.user.uid;
-    await mailInvite(auth2,email);
-  }finally{await auth2.signOut().catch(()=>{})}
-  // welcomed:false : à sa première connexion, la personne choisit son pseudo.
+  try{const cred=await auth2.createUserWithEmailAndPassword(email,password);uidNew=cred.user.uid}
+  finally{await auth2.signOut().catch(()=>{})}
+  // welcomed:false : à sa première connexion, la personne choisit son pseudo et son mot de passe.
+  // Le mot de passe provisoire est gardé à part (lisible par les admins seulement) pour réafficher l'invitation.
   await DB.doc("users/"+uidNew).set({email,name,role,modules:modules||[],welcomed:false});
-  return uidNew;
+  await DB.doc("invites/"+uidNew).set({email,name,password,at:new Date().toISOString()}).catch(()=>{});
+  return {uid:uidNew,email,name,password};
 }
 // Un membre de l'équipe (identifiant) ou un nom écrit à la main.
 const memberName=u=>{if(!u)return "";const m=TEAM.get(u);return m?(m.name||m.email):u};

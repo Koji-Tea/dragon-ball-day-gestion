@@ -79,10 +79,12 @@ const ACT={
   newEdition2027:()=>recordSheet("editions",null,EDITION_2027),
   editProfile:()=>profileSheet(false),
   copyLink:()=>{const v=APP_URL();(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("Lien copié. Envoie-le à qui tu veux.","goku"),()=>toast(v))},
-  resendInvite:el=>sendInvite(el.dataset.v).then(()=>toast("Invitation renvoyée à "+el.dataset.v+".","piccolo"),()=>toast("L’invitation n’a pas pu partir. Réessaie plus tard.","freezer")),
+  showInvite:el=>showInvite(el.dataset.id),
+  copyInvite:()=>{const v=UI.inviteText||"";(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("Message copié. Colle-le dans ta messagerie ou WhatsApp.","piccolo"),()=>toast("Sélectionne le texte et copie-le à la main.","freezer"))},
+  shareInvite:()=>navigator.share&&navigator.share({title:"Ton accès à l’app Dragon Ball Day",text:UI.inviteText||""}).catch(()=>{}),
   newMember:()=>memberSheet(),editMember:el=>memberSheet(el.dataset.id),
   grantRequest:el=>{const r=REQUESTS.get(el.dataset.id);memberSheet(el.dataset.id,{email:r.email,name:r.name,role:"comite",modules:[]})},
-  removeMember:el=>{DB.doc("users/"+el.dataset.id).delete().then(()=>toast("Accès retiré.","piccolo"),dbErr);closeSheet()},
+  removeMember:el=>{DB.doc("invites/"+el.dataset.id).delete().catch(()=>{});DB.doc("users/"+el.dataset.id).delete().then(()=>toast("Accès retiré.","piccolo"),dbErr);closeSheet()},
   loadDemo:()=>loadDemo(),clearDemo:()=>clearDemo(),
   logout:()=>firebase.auth().signOut().then(()=>location.reload()),
   exportJson:()=>saveFile("dragon-ball-day-sauvegarde-"+today()+".json",JSON.stringify({app:"dragon-ball-day",version:1,exported:new Date().toISOString(),cfg:CFG,data:Object.fromEntries(Object.keys(COLS).filter(canRead).map(c=>[c,all(c)]))},null,1)),
@@ -91,7 +93,7 @@ const ACT={
     saveFile("dragon-ball-day-contacts-"+today()+".csv",csv(rows))},
 };
 // Actions qui modifient des données : vérifiées avant exécution (la base refuse de toute façon ce que le rôle n'autorise pas).
-const WRITES={resendInvite:"admin",approveProposal:"admin",refuseProposal:"admin",toggleTask:"tasks",delRecord:null,ticketManual:"ticketing",delTicketLot:"ticketing",newEdition2027:"editions",loadDemo:"admin",clearDemo:"admin",newMember:"admin",editMember:"admin",grantRequest:"admin",removeMember:"admin"};
+const WRITES={showInvite:"admin",approveProposal:"admin",refuseProposal:"admin",toggleTask:"tasks",delRecord:null,ticketManual:"ticketing",delTicketLot:"ticketing",newEdition2027:"editions",loadDemo:"admin",clearDemo:"admin",newMember:"admin",editMember:"admin",grantRequest:"admin",removeMember:"admin"};
 document.addEventListener("click",e=>{
   const el=e.target.closest("[data-act]");
   if(e.target.classList&&e.target.classList.contains("scrim")){closeSheet();return}
