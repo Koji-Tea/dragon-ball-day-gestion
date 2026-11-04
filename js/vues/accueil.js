@@ -15,6 +15,25 @@ function attention(){
   return A;
 }
 
+/* Installer l'app sur le téléphone : bouton natif (Android, Chrome, Edge) ou marche à suivre (iPhone). */
+let INSTALL_EVT=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();INSTALL_EVT=e;changed()});
+window.addEventListener("appinstalled",()=>{INSTALL_EVT=null;ls("dbday-install","off");changed()});
+const isInstalled=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const isPhone=()=>/iphone|ipad|ipod|android/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+function installBanner(){
+  if(isInstalled()||ls("dbday-install")==="off"||!(INSTALL_EVT||isPhone()))return "";
+  return `<div class="banner"><img alt="" src="icon-192.png" style="border-radius:12px"><div class="grow"><b>Installe l’app sur ton téléphone</b><div class="small muted">Elle s’ouvre alors comme une vraie application, depuis ton écran d’accueil.</div></div>
+  <button class="btn primary sm" data-act="installApp">Installer l’app</button><button class="btn ghost sm" data-act="installLater" aria-label="Masquer">Plus tard</button></div>`;
+}
+function installApp(){
+  if(INSTALL_EVT){const e=INSTALL_EVT;INSTALL_EVT=null;e.prompt();e.userChoice.then(c=>{if(c.outcome==="accepted")ls("dbday-install","off");changed()}).catch(()=>{});return}
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  openSheet(sheetHead("Installer l’app","goku")+(ios?
+    `<ol class="small" style="padding-left:20px;line-height:1.7;margin-top:0"><li>Ouvre cette page dans <b>Safari</b>.</li><li>Touche le bouton <b>Partager</b> (le carré avec une flèche vers le haut), en bas ou en haut de l’écran.</li><li>Choisis <b>Sur l’écran d’accueil</b>, puis <b>Ajouter</b>.</li></ol>`:
+    `<ol class="small" style="padding-left:20px;line-height:1.7;margin-top:0"><li>Ouvre cette page dans <b>Chrome</b>.</li><li>Touche le menu <b>⋮</b> en haut à droite.</li><li>Choisis <b>Installer l’application</b> ou <b>Ajouter à l’écran d’accueil</b>.</li></ol>`)+
+    `<p class="small muted" style="margin:0">L’icône Dragon Ball Day apparaît ensuite sur ton écran d’accueil.</p>`);
+}
 function welcome(){
   if(editions().length)return "";
   return `<div class="banner"><img alt="" src="${IMG.goku}"><div class="grow"><b>Bienvenue dans la gestion du Dragon Ball Day !</b><div class="small muted">Commence par créer l’édition du 6 juin 2027 à La Marive. Tu peux aussi charger des exemples pour découvrir l’application.</div></div>
@@ -24,7 +43,7 @@ VIEWS.accueil=()=>{
   const ed=currentEdition();
   const h=new Date().getHours(),hello=h<5||h>=18?"Bonsoir":"Salut";
   const name=(ME.name||"").split(" ")[0];
-  if(!ed)return head(`${hello}${name?" "+esc(name):""} !`,"Prêt·e pour la prochaine convention ?")+welcome();
+  if(!ed)return head(`${hello}${name?" "+esc(name):""} !`,"Prêt·e pour la prochaine convention ?")+installBanner()+welcome();
   const d=daysTo(ed.date);
   const st=STAFF.includes(ME.role)?taskStats():null;
   // Les 7 boules de cristal : chaque septième des tâches terminées en allume une.
@@ -33,11 +52,11 @@ VIEWS.accueil=()=>{
     <span class="when">${edWhen(ed)}${ed.place?" · "+esc(ed.place):""}${ed.city?", "+esc(ed.city):""}</span>
     <span class="count">${d>0?`J-${d}<small>${d>1?"jours":"jour"}</small>`:d===0?"C’est aujourd’hui !":`Terminé<small>il y a ${plural(-d,"jour")}</small>`}</span></div>
     <img class="mascot" alt="" src="${IMG.goku}"></div>`;
-  if(!st)return head(`${hello}${name?" "+esc(name):""} !`,"Merci de faire partie de l’aventure.")+`<div class="stack">${hero}
+  if(!st)return head(`${hello}${name?" "+esc(name):""} !`,"Merci de faire partie de l’aventure.")+installBanner()+`<div class="stack">${hero}
     <div class="grid g2"><div class="card"><div class="card-head"><h2>Mon planning</h2><a class="btn sm" href="#benevoles">Voir tout</a></div>${myShifts()}</div>
     <div class="card"><div class="card-head"><h2>Programme</h2><a class="btn sm" href="#programme">Voir la grille</a></div><p class="small muted" style="margin:0">${plural(inEdition("activities").length,"activité")} au programme. Le détail des horaires et des lieux est dans la grille.</p></div></div></div>`;
   const al=[...st.late.map(t=>({t,c:"bad"})),...st.soon.map(t=>({t,c:"warn"}))];
-  return head(`${hello}${name?" "+esc(name):""} !`,"Voici où en est la préparation.")+welcome()+
+  return head(`${hello}${name?" "+esc(name):""} !`,"Voici où en est la préparation.")+installBanner()+welcome()+
   `<div class="stack">${hero}
   <div class="kpis">
     <a class="kpi" href="#taches"><span class="label">Tâches ouvertes</span><b>${st.open.length}</b><small>${st.late.length?`<span style="color:var(--bad);font-weight:800">${st.late.length} en retard</span>`:"rien en retard"}</small></a>
