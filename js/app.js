@@ -78,7 +78,7 @@ const ACT={
   toggleTask:el=>{const t=get("tasks",el.dataset.id);if(!t)return;const done=t.status!=="Fait";put("tasks",{...t,status:done?"Fait":"À faire",doneAt:done?today():null});if(done)toast("Bien joué ! Une tâche de moins.","trunks")},
   pickEdition:el=>{pickEdition(el.dataset.id);toast("Édition affichée : "+get("editions",el.dataset.id).name)},
   newEdition2027:()=>recordSheet("editions",null,EDITION_2027),
-  installApp:()=>installApp(),installLater:()=>{ls("dbday-install","off");render()},
+  installApp:()=>installApp(),openGame:()=>openGame(),installLater:()=>{ls("dbday-install","off");render()},
   editProfile:()=>profileSheet(false),
   copyLink:()=>{const v=APP_URL();(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("Lien copié. Envoie-le à qui tu veux.","goku"),()=>toast(v))},
   showInvite:el=>showInvite(el.dataset.id),
