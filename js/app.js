@@ -8,7 +8,7 @@ const NAV=[["accueil","Accueil","home",()=>true,""],["taches","Tâches","list",(
   ["contacts","Contacts","people",()=>canRead("contacts"),"Partenaires"],
   ["manifestations","Manifestations","megaphone",()=>canRead("events"),"Partenaires"],
   ["budget","Budget & compta","coins",()=>true,"Argent"],["billetterie","Billetterie","ticket",()=>canRead("ticketing"),"Argent"],
-  ["membres","Membres","id",()=>canRead("members"),"Association"],["guerriers","Guerriers Z","bolt",()=>canRead("warriors"),"Association"],["editions","Éditions","star",()=>true,"Association"],["reglages","Réglages","gear",()=>true,"Association"]];
+  ["membres","Membres","id",()=>canRead("members"),"Association"],["guerriers","Guerriers Z","bolt",()=>canRead("warriors"),"Association"],["editions","Éditions","star",()=>true,"Association"],["reglages","Réglages","gear",()=>true,"Association"],["fun","Fun","game",()=>true,"Pause"]];
 const TAB=["accueil","taches","programme","benevoles"];
 let route="accueil";
 const navItems=()=>NAV.filter(n=>n[3]());
