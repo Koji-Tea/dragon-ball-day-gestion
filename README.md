@@ -7,14 +7,14 @@ Application de gestion de la convention Dragon Ball Day (association Dragon Ball
 | Accueil | Compte à rebours, chiffres clés, points d’attention de tous les modules |
 | Tâches | Rétro-planning par pôle, échéances, les 7 boules de cristal |
 | Programme | Grille lieux × horaires, conflits (même lieu, même invité), export CSV, impression |
-| Invités & exposants | Invités (cachet, contrat, rider, dédicaces) ; artistes, exposants et stands |
+| Invités & exposants | Invités (cachet visible par l’admin seulement, contrat, rider, dédicaces) ; artistes, exposants et stands |
 | Logement & transport | Hôtels, trajets, planning des arrivées et départs |
 | Bénévoles | Inscriptions, créneaux par poste, doubles affectations ; chaque bénévole voit son planning |
 | Sponsors & partenaires | Suivi de chaque piste jusqu’au paiement, relances, contreparties, logos |
 | Fournisseurs | Devis, commandes, livraisons, acomptes et paiements |
 | Manifestations | Salons et événements où l’équipe tient un stand : vente de billets, promo, matériel |
 | Contacts | Le carnet d’adresses commun à toutes les éditions |
-| Budget & compta | Prévu, engagé et payé par catégorie ; les montants des autres modules arrivent tout seuls |
+| Budget & compta | Admin seulement. Prévu, engagé et payé par catégorie ; les montants des autres modules arrivent tout seuls |
 | Billetterie | Import du CSV des ventes Infomaniak (totaux seulement, sans données des acheteurs), ventes par semaine et par tarif, remplissage |
 | Membres | Membres de l’association et leur fonction |
 | Guerriers Z | Membres cotisants et cotisations annuelles |
@@ -31,7 +31,7 @@ Construite sur la même base que [Koji Tea – Gestion](https://github.com/Koji-
 | --- | --- |
 | Administrateur·rice | Tout, y compris l’équipe et les réglages |
 | Comité | Tous les modules, sans la gestion de l’équipe |
-| Trésorier·ère | Consulte tout, gère le budget, la billetterie, les cotisations et ses tâches |
+| Trésorier·ère | Consulte tout (sauf le budget et les cachets), gère la billetterie, les cotisations et ses tâches |
 | Accès limité | Voit les menus cochés dans sa fiche ; ses ajouts, modifications et suppressions attendent la validation d’un·e admin |
 | Bénévole | Voit le programme et ses propres créneaux (repérés par son e-mail) |
 

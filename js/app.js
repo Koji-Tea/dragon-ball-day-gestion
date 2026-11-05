@@ -7,7 +7,7 @@ const NAV=[["accueil","Accueil","home",()=>true,""],["taches","Tâches","list",(
   ["sponsors","Sponsors & partenaires","gift",()=>canRead("sponsors"),"Partenaires"],["fournisseurs","Fournisseurs","truck",()=>canRead("suppliers"),"Partenaires"],
   ["contacts","Contacts","people",()=>canRead("contacts"),"Partenaires"],
   ["manifestations","Manifestations","megaphone",()=>canRead("events"),"Partenaires"],
-  ["budget","Budget & compta","coins",()=>canRead("budget"),"Argent"],["billetterie","Billetterie","ticket",()=>canRead("ticketing"),"Argent"],
+  ["budget","Budget & compta","coins",()=>true,"Argent"],["billetterie","Billetterie","ticket",()=>canRead("ticketing"),"Argent"],
   ["membres","Membres","id",()=>canRead("members"),"Association"],["guerriers","Guerriers Z","bolt",()=>canRead("warriors"),"Association"],["editions","Éditions","star",()=>true,"Association"],["reglages","Réglages","gear",()=>true,"Association"]];
 const TAB=["accueil","taches","programme","benevoles"];
 let route="accueil";
@@ -39,6 +39,7 @@ function render(){
   if(!ready())return;
   // Première connexion après une invitation : on propose de choisir son pseudo.
   if(!welcomeShown&&MODE==="cloud"&&ME.welcomed===false){welcomeShown=true;setTimeout(()=>profileSheet(true),300)}
+  moveGuestFees();
   const a=document.activeElement,aid=a&&a.id,sel=a&&a.selectionStart;
   $("#main").innerHTML=(VIEWS[route]||VIEWS.accueil)();
   if(aid){const el=document.getElementById(aid);if(el&&el!==a&&!$("#sheetRoot").contains(el)){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}

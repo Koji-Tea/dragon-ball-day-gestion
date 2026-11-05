@@ -36,7 +36,7 @@ defineMod({
 function ledger(){return memo("ledger",()=>{
   const L=[],add=(cat,label,amount,paidAmt,key,o)=>{if(+amount)L.push({cat,kind:catKind(cat),label,amount:+amount,paid:Math.min(+paidAmt||0,+amount),key,id:o.id,date:o.date||o.day||o.checkIn||o.delivery||""})};
   const r=c=>canRead(c)?inEdition(c):[];
-  r("guests").filter(g=>g.status==="Confirmé").forEach(g=>add("Invités & cachets","Cachet · "+g.name,g.fee,g.feePaid?g.fee:0,"guests",g));
+  r("guests").filter(g=>g.status==="Confirmé").forEach(g=>{const f=guestFee(g);if(f)add("Invités & cachets","Cachet · "+g.name,f.fee,f.feePaid?f.fee:0,"guests",g)});
   r("lodging").filter(l=>l.status==="Réservé"||l.status==="Confirmé").forEach(l=>add("Logement",`${l.hotel}${forWho(l)?" · "+forWho(l):""}`,lodgingCost(l),l.paid?lodgingCost(l):0,"lodging",l));
   r("transport").filter(t=>t.booked).forEach(t=>add("Transport",`${t.kind}${forWho(t)?" · "+forWho(t):""}`,t.cost,t.paid?t.cost:0,"transport",t));
   r("suppliers").filter(s=>ORDERED.includes(s.status)).forEach(s=>add(SUPPLIER_TO_CAT[s.cat]||"Fournisseurs & matériel",`${s.item} · ${s.name}`,s.amount,s.status==="Payé"?s.amount:s.deposit,"suppliers",s));
@@ -60,6 +60,7 @@ function moneyTable(title,rows,exp){
     </tbody><tfoot><tr><td>Total</td><td class="n">${chf(tot("pl"))}</td><td class="n">${chf(tot("en"))}</td><td class="n">${chf(tot("pa"))}</td><td></td></tr></tfoot></table></div>`;
 }
 VIEWS.budget=()=>{
+  if(!isAdmin())return head("Budget & comptabilité","","","freezer")+`<div class="card">${emptyBox("freezer","Accès réservé","Le budget et la comptabilité ne sont visibles que par l’administrateur·rice de l’association.")}</div>`;
   const ed=currentEdition();if(!ed)return noEdition("Budget & comptabilité","freezer");
   const tab=tabOf("budget","overview");
   const L=ledger(),B=inEdition("budget");

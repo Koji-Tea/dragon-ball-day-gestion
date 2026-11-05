@@ -104,8 +104,10 @@ service cloud.firestore {
     }
     match /members/{id}     { allow read: if sees('membres'); allow write: if managesMoney('membres'); }
     match /warriors/{id}    { allow read: if sees('membres'); allow write: if managesMoney('membres'); }
-    match /budget/{id}      { allow read: if sees('finances'); allow write: if managesMoney('finances'); }
-    match /entries/{id}     { allow read: if sees('finances'); allow write: if managesMoney('finances'); }
+    // Budget, comptabilité et cachets des invités : l'administrateur·rice seulement.
+    match /budget/{id}      { allow read, write: if isAdmin(); }
+    match /entries/{id}     { allow read, write: if isAdmin(); }
+    match /fees/{id}        { allow read, write: if isAdmin(); }
     match /ticketing/{id}   { allow read: if sees('finances'); allow write: if managesMoney('finances'); }
   }
 }

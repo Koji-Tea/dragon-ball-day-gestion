@@ -4,13 +4,13 @@
 const ROLES={
   admin:{l:"Administrateur·rice",d:"Tout, y compris l’équipe et les réglages."},
   comite:{l:"Comité",d:"Tous les modules, sans la gestion de l’équipe."},
-  tresorier:{l:"Trésorier·ère",d:"Consulte tout, gère le budget, la billetterie, les cotisations et ses tâches."},
+  tresorier:{l:"Trésorier·ère",d:"Consulte tout (sauf le budget et les cachets), gère la billetterie, les cotisations et ses tâches."},
   responsable:{l:"Accès limité",d:"Voit les menus cochés ; ses ajouts et modifications attendent la validation d’un·e admin."},
   benevole:{l:"Bénévole",d:"Voit son planning et le programme de l’édition."},
 };
 const ALL_ROLES=Object.keys(ROLES);
 const STAFF=["admin","comite","tresorier","responsable"];
-const BOARD=["admin","comite"],MONEY=["admin","comite","tresorier"];
+const BOARD=["admin","comite"],MONEY=["admin","comite","tresorier"],ADMIN=["admin"];
 /* Collections de données.
    module : pôle qu'on peut confier à un·e responsable. perEdition : chaque fiche appartient à une édition.
    own : champ (liste d'e-mails) qui permet à un·e bénévole de lire seulement ses propres fiches. */
@@ -30,13 +30,15 @@ const COLS={
   events:{read:STAFF,write:BOARD,module:"manifestations",perEdition:true},
   members:{read:STAFF,write:MONEY,module:"membres"},
   warriors:{read:STAFF,write:MONEY,module:"membres"},
-  budget:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
-  entries:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
+  // Budget, comptabilité et cachets des invités : l'administrateur·rice seulement.
+  budget:{read:ADMIN,write:ADMIN,perEdition:true},
+  entries:{read:ADMIN,write:ADMIN,perEdition:true},
+  fees:{read:ADMIN,write:ADMIN,perEdition:true},
   ticketing:{read:STAFF,write:MONEY,module:"finances",perEdition:true},
 };
 /* Modules qu'on peut confier à un·e responsable de pôle. */
 const DELEGABLE=[["invites","Invités & exposants"],["logistique","Logement & transport"],["programme","Programme & activités"],["benevoles","Bénévoles"],
-  ["sponsors","Sponsors & partenaires"],["fournisseurs","Fournisseurs"],["contacts","Contacts"],["manifestations","Manifestations"],["finances","Budget & billetterie"],["membres","Membres & Guerriers Z"]];
+  ["sponsors","Sponsors & partenaires"],["fournisseurs","Fournisseurs"],["contacts","Contacts"],["manifestations","Manifestations"],["finances","Billetterie"],["membres","Membres & Guerriers Z"]];
 
 let ME={uid:"local",name:"",email:"",role:"admin",modules:[]};
 // Accès limité : seuls les menus cochés sont visibles (les données ouvertes aux bénévoles, comme le programme, restent lisibles).
@@ -218,7 +220,8 @@ async function createMember({email,name,role,modules}){
   return {uid:uidNew,email,name,password};
 }
 // Un membre de l'équipe (identifiant) ou un nom écrit à la main.
-const memberName=u=>{if(!u)return "";const m=TEAM.get(u);return m?(m.name||m.email):u};
+// Un identifiant de compte inconnu (compte retiré) ne s'affiche pas tel quel.
+const memberName=u=>{if(!u)return "";const m=TEAM.get(u);return m?(m.name||m.email):/^[A-Za-z0-9]{20,}$/.test(u)?"compte retiré":u};
 // Choix du responsable : les membres actifs de l'association et les comptes de l'équipe.
 // Un membre qui a un compte (même e-mail) est enregistré par son identifiant de compte, sinon par son nom.
 function memberOpts(){

@@ -17,6 +17,8 @@ function inEdition(col){const e=currentEdition();return all(col).filter(o=>e&&o.
 
 // Champ visible seulement quand un autre champ a une valeur donnée (show:{k,v}) ; basculé à chaque changement du formulaire.
 const shown=(f,o)=>!f.show||(o[f.show.k]??"")===f.show.v;
+// Champ admin:true : affiché, lu et exporté seulement pour l'administrateur·rice.
+const fieldsFor=mod=>mod.fields.filter(f=>!f.admin||isAdmin());
 function fieldHTML(f,o){
   if(f.show)return fieldHTML({...f,show:null},o).replace("<div ",`<div data-show-k="${esc(f.show.k)}" data-show-v="${esc(f.show.v)}" ${shown(f,o)?"":"hidden"} `);
   const v=o[f.k]??f.def??"",id="f_"+f.k,req=f.req?"required":"",cls=f.wide||f.type==="textarea"||f.type==="checks"?"f wide":"f";
@@ -43,7 +45,7 @@ function fieldHTML(f,o){
 }
 function readForm(mod,form){
   const fd=new FormData(form),o={};
-  mod.fields.forEach(f=>{
+  fieldsFor(mod).forEach(f=>{
     if(f.type==="check")o[f.k]=fd.has(f.k);
     else if(f.type==="checks")o[f.k]=fd.getAll(f.k);
     else if(f.type==="member"){const v=String(fd.get(f.k)||"").trim(),m=[...TEAM.values()].find(m=>norm(m.name||m.email)===norm(v));o[f.k]=m?m.uid:v}
@@ -61,7 +63,7 @@ function recordSheet(key,id,preset={}){
   openSheet(sheetHead(id?(mod.titleOf?mod.titleOf(o):esc(o.name||mod.one)):mod.newLabel,mod.img)+
     (mod.sheetTop&&id?mod.sheetTop(o):"")+
     (ask?`<div class="banner" style="margin:0 0 14px"><img alt="" src="${IMG.piccolo}"><div class="grow small">Tes changements seront envoyés à l’administrateur·rice, qui les validera avant qu’ils apparaissent.</div></div>`:"")+
-    `<form data-submit="record" data-mod="${key}" data-id="${id||""}"><fieldset style="border:0;padding:0;margin:0" ${ro?"disabled":""}><div class="fields">${mod.fields.map(f=>fieldHTML(f,o)).join("")}</div></fieldset>
+    `<form data-submit="record" data-mod="${key}" data-id="${id||""}"><fieldset style="border:0;padding:0;margin:0" ${ro?"disabled":""}><div class="fields">${fieldsFor(mod).map(f=>fieldHTML(f,o)).join("")}</div></fieldset>
     ${o.updatedAt?`<p class="tiny muted" style="margin:12px 0 0">Modifié le ${fDate(o.updatedAt.slice(0,10))}${o.updatedBy?" par "+esc(o.updatedBy):""}</p>`:""}
     <div class="formfoot">${id&&!ro?`<button type="button" class="btn danger" data-act="delRecord" data-mod="${key}" data-id="${id}" data-confirm="${ask?"Oui, demander":"Oui, supprimer"}">${ask?"Demander la suppression":"Supprimer"}</button>`:"<span></span>"}${ro?`<span class="small muted">Lecture seule pour ton rôle.</span>`:`<button class="btn primary">${ask?"Envoyer pour validation":"Enregistrer"}</button>`}</div></form>`);
 }
@@ -97,7 +99,8 @@ function exportMod(key,xs,name){
     if(f.type==="checks"){const op=typeof f.options==="function"?f.options():f.options;return (v||[]).map(k=>(op.find(x=>x[0]===k)||[k,k])[1]).join(", ")}
     if(f.type==="select"&&f.options&&typeof f.options==="function"){const x=f.options().find(x=>Array.isArray(x)&&x[0]===v);return x?x[1]:v||""}
     return v??""};
-  saveFile(`dragon-ball-day-${name}-${today()}.csv`,csv([m.fields.map(f=>f.l),...xs.map(o=>m.fields.map(f=>val(f,o)))]));
+  const fs=fieldsFor(m),rows=xs.map(o=>m.prefill?m.prefill(o):o);
+  saveFile(`dragon-ball-day-${name}-${today()}.csv`,csv([fs.map(f=>f.l),...rows.map(o=>fs.map(f=>val(f,o)))]));
 }
 
 /* Photo d'une fiche : recadrée en carré et compressée dans le navigateur, puis gardée dans la fiche elle-même
