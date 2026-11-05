@@ -10,7 +10,6 @@ function attention(){
     if(shiftClashes().length)A.push(["heart","Des bénévoles sont sur deux créneaux en même temps","benevoles"])}
   const sp=r("sponsors");if(sp){const n=sp.filter(s=>["Prospect","Contacté","En discussion"].includes(s.status)&&s.next&&s.next<=addDays(today(),7)).length;if(n)A.push(["gift",`${plural(n,"sponsor")} à relancer cette semaine`,"sponsors"])}
   const su=r("suppliers");if(su){const n=su.filter(s=>s.due&&s.status!=="Payé"&&ORDERED.includes(s.status)&&s.due<today()).length;if(n)A.push(["truck",`${plural(n,"facture fournisseur")} en retard de paiement`,"fournisseurs"])}
-  if(canRead("budget")&&r("budget").length){const L=ledger(),B=r("budget");const over=EXP_CATS.filter(c=>{const pl=sum(B.filter(b=>b.cat===c),b=>b.planned);return pl&&sum(L.filter(l=>l.cat===c),l=>l.amount)>pl});if(over.length)A.push(["coins",`Budget dépassé : ${over.join(", ")}`,"budget"])}
   if(canRead("warriors")){const y=String(new Date().getFullYear()),n=all("warriors").filter(w=>w.status!=="Inactif"&&!(w.paid||[]).includes(y)).length;if(n)A.push(["bolt",`${plural(n,"cotisation")} ${y} de Guerriers Z à encaisser`,"guerriers"])}
   return A;
 }
@@ -62,7 +61,6 @@ VIEWS.accueil=()=>{
     <a class="kpi" href="#taches"><span class="label">Tâches ouvertes</span><b>${st.open.length}</b><small>${st.late.length?`<span style="color:var(--bad);font-weight:800">${st.late.length} en retard</span>`:"rien en retard"}</small></a>
     ${canRead("guests")?`<a class="kpi" href="#invites"><span class="label">Invités confirmés</span><b>${inEdition("guests").filter(g=>g.status==="Confirmé").length}</b><small>${plural(inEdition("exhibitors").filter(x=>x.status==="Accepté"||x.status==="Payé").length,"exposant")}</small></a>`:""}
     ${canRead("ticketing")?(()=>{const t=ticketTotals();return `<a class="kpi" href="#billetterie"><span class="label">Billets vendus</span><b>${num(t.qty)}</b><small>${ed.goal?Math.round(t.qty/ed.goal*100)+" % de l’objectif ("+num(ed.goal)+")":"objectif à définir"}</small></a>`})():""}
-    ${canRead("budget")?(()=>{const L=ledger(),v=sum(L.filter(l=>l.kind==="Recette"),l=>l.amount)-sum(L.filter(l=>l.kind==="Dépense"),l=>l.amount);return `<a class="kpi" href="#budget"><span class="label">Résultat engagé</span><b style="color:${v<0?"var(--bad)":"var(--good)"}">${v>0?"+":""}${chf(v)}</b><small>recettes − dépenses</small></a>`})():""}
   </div>
   <div class="grid g3">
     <div class="card"><div class="card-head"><h2>À faire bientôt</h2><a class="btn sm" href="#taches">Toutes les tâches</a></div>

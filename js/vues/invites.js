@@ -16,8 +16,8 @@ defineMod({
     {k:"travel",l:"Moyen de transport",type:"select",options:["Train","Avion","Voiture","Autre"],blank:"–"},
     {k:"arrival",l:"Arrivée",type:"date"},
     {k:"departure",l:"Départ",type:"date"},
-    {k:"fee",l:"Cachet",type:"money",help:"Laisse vide si l’invité vient sans cachet."},
-    {k:"feePaid",l:"Cachet payé",type:"check"},
+    {k:"fee",l:"Cachet",type:"money",admin:true,help:"Visible seulement par l’administrateur·rice. Laisse vide si l’invité vient sans cachet."},
+    {k:"feePaid",l:"Cachet payé",type:"check",admin:true},
     {k:"contract",l:"Contrat signé",type:"check"},
     docField("contractFile","Contrat d’artiste"),
     {k:"announced",l:"Annoncé au public",type:"check"},
@@ -26,7 +26,29 @@ defineMod({
     {k:"signing",l:"Dédicaces",type:"textarea",ph:"Créneaux, prix, nombre de signatures, photos autorisées…"},
     {k:"notes",l:"Notes",type:"textarea"},
   ],
+  // Le cachet est rangé à part (collection fees), que seul·e l'admin peut lire : la fiche de l'invité ne le contient pas.
+  prefill:o=>{const f=o.id&&guestFee(o);return f?{...o,...f}:o},
+  beforeSave:o=>{
+    if(isAdmin()){if(!o.id)o.id=uid();const f={id:o.id,editionId:o.editionId,fee:o.fee??null,feePaid:!!o.feePaid},old=get("fees",o.id);
+      if(f.fee||f.feePaid||old)put("fees",{...(old||{}),...f})}
+    delete o.fee;delete o.feePaid;return o;
+  },
 });
+// Cachet d'un invité : null si on ne peut pas le voir. Les anciennes fiches qui le gardaient encore sont lues aussi.
+function guestFee(g){
+  if(!isAdmin())return null;
+  const f=get("fees",g.id);
+  return f?{fee:f.fee,feePaid:!!f.feePaid}:g.fee!=null||g.feePaid?{fee:g.fee,feePaid:!!g.feePaid}:null;
+}
+// Les anciennes fiches d'invités gardaient le cachet : l'admin le déplace dans fees, à l'abri des autres comptes.
+function moveGuestFees(){
+  if(!isAdmin()||!ready())return;
+  all("guests").filter(g=>"fee" in g||"feePaid" in g).forEach(g=>{
+    if(!get("fees",g.id)&&(g.fee!=null||g.feePaid))put("fees",{id:g.id,editionId:g.editionId,fee:g.fee??null,feePaid:!!g.feePaid,demo:!!g.demo});
+    const c={...g};delete c.fee;delete c.feePaid;put("guests",c);
+  });
+  all("fees").filter(f=>!get("guests",f.id)).forEach(f=>del("fees",f.id));
+}
 const EXHIB_KINDS=["Artiste","Exposant","Association","Restauration"];
 const EXHIB_STATES=["Candidature","Accepté","Payé","Refusé"];
 defineMod({
@@ -54,7 +76,7 @@ function guestTodo(g){
   if(g.status!=="Confirmé")return [];
   const t=[];
   if(!g.contract)t.push("contrat");
-  if(g.fee&&!g.feePaid)t.push("cachet");
+  const f=guestFee(g);if(f&&f.fee&&!f.feePaid)t.push("cachet");
   if(canRead("lodging")&&g.departure&&g.arrival&&g.departure>g.arrival&&!inEdition("lodging").some(l=>l.guestId===g.id))t.push("logement");
   if(canRead("transport")&&!inEdition("transport").some(x=>x.guestId===g.id))t.push("transport");
   return t;
@@ -66,13 +88,13 @@ VIEWS.invites=()=>{
   return head("Invités",esc(ed.name),addBtn("guests","Invité")+`<button class="btn" data-act="exportMod" data-mod="guests">${ic("down")}CSV</button>`,"saiyaman")+
   `<div class="stack"><div class="kpis">
     <div class="kpi"><span class="label">Confirmés</span><b>${conf.length}</b><small>sur ${plural(gs.filter(g=>g.status!=="Annulé").length,"piste")}</small></div>
-    <div class="kpi"><span class="label">Cachets</span><b>${chf(sum(conf,g=>g.fee))}</b><small>${chf(sum(conf.filter(g=>g.feePaid),g=>g.fee))} déjà payés</small></div>
+    ${isAdmin()?`<div class="kpi"><span class="label">Cachets</span><b>${chf(sum(conf,g=>(guestFee(g)||{}).fee))}</b><small>${chf(sum(conf.filter(g=>(guestFee(g)||{}).feePaid),g=>guestFee(g).fee))} déjà payés</small></div>`:""}
     <div class="kpi"><span class="label">Contrats</span><b>${conf.filter(g=>g.contract).length}/${conf.length}</b><small>signés</small></div>
     <div class="kpi"><span class="label">Annoncés</span><b>${conf.filter(g=>g.announced).length}</b><small>au public</small></div></div>
   <div class="card"><div class="row" style="margin-bottom:10px">${searchBox("Rechercher un invité…")}</div>
     <div class="chips" style="margin-bottom:10px"><button class="chip ${!UI.filter?"on":""}" data-act="filter" data-v="">Tous</button>${GUEST_STATES.filter(s=>gs.some(g=>g.status===s)).map(s=>`<button class="chip ${UI.filter===s?"on":""}" data-act="filter" data-v="${esc(s)}">${esc(s)} · ${gs.filter(g=>g.status===s).length}</button>`).join("")}</div>
     ${xs.length?`<div class="list">${xs.map(g=>{const todo=guestTodo(g);return rowItem("guests",g,{title:g.name,
-      sub:esc([g.kind,g.arrival?"arrive "+fDay(g.arrival):"",g.travel,g.fee?chf(g.fee):"",memberName(g.owner)?"suivi par "+memberName(g.owner):""].filter(Boolean).join(" · "))+(todo.length?` · <b style="color:var(--warn)">reste : ${esc(todo.join(", "))}</b>`:""),
+      sub:esc([g.kind,g.arrival?"arrive "+fDay(g.arrival):"",g.travel,(guestFee(g)||{}).fee?chf(guestFee(g).fee):"",memberName(g.owner)?"suivi par "+memberName(g.owner):""].filter(Boolean).join(" · "))+(todo.length?` · <b style="color:var(--warn)">reste : ${esc(todo.join(", "))}</b>`:""),
       end:statusPill(g.status,GUEST_PILL)})}).join("")}</div>`
     :emptyBox("saiyaman",gs.length?"Personne ne correspond":"Pas encore d’invité",gs.length?"Essaie un autre mot ou un autre statut.":"Note les pistes dès qu’elles apparaissent, même au stade de l’idée.",gs.length?"":addBtn("guests","Premier invité"))}</div></div>`;
 };
