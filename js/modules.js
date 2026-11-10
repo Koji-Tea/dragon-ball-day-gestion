@@ -4,7 +4,7 @@
    Les modules des étapes suivantes (invités, sponsors, bénévoles…) se branchent de la même façon. */
 const MODS={};
 const VIEWS={};
-const UI={edition:ls("dbday-edition")||"",q:"",filter:"",taskTab:"ouvertes",taskPole:"",taskMine:ls("dbday-mine")==="1",tab:{},day:""};
+const UI={edition:ls("dbday-edition")||"",q:"",filter:"",taskTab:"ouvertes",taskPole:"",taskMine:ls("dbday-mine")==="1",tab:{},day:"",chat:"",draft:""};
 function defineMod(m){MODS[m.key]=m;return m}
 
 /* Édition affichée : celle choisie, sinon la prochaine à venir, sinon la plus récente. */

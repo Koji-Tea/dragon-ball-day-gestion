@@ -1,7 +1,7 @@
 "use strict";
 /* ---------- Navigation ---------- */
 // [écran, libellé, icône, visible ?, groupe]
-const NAV=[["accueil","Accueil","home",()=>true,""],["taches","Tâches","list",()=>canRead("tasks"),""],
+const NAV=[["accueil","Accueil","home",()=>true,""],["taches","Tâches","list",()=>canRead("tasks"),""],["tchat","Tchat","chat",()=>true,""],
   ["programme","Programme","clock",()=>canRead("activities"),"La convention"],["invites","Invités","mic",()=>canRead("guests"),"La convention"],["exposants","Exposants","store",()=>canRead("exhibitors"),"La convention"],
   ["logistique","Logement & transport","bed",()=>canRead("lodging"),"La convention"],["benevoles","Bénévoles","heart",()=>canRead("shifts")&&(!isStaff()||canRead("volunteers")),"La convention"],
   ["sponsors","Sponsors & partenaires","gift",()=>canRead("sponsors"),"Partenaires"],["fournisseurs","Fournisseurs","truck",()=>canRead("suppliers"),"Partenaires"],
@@ -27,10 +27,11 @@ function nav(){
   $("#tabbar").style.gridTemplateColumns=`repeat(${tabs.length+1},1fr)`;
   $("#tabbar").innerHTML=tabs.map(k=>{const n=NAV.find(x=>x[0]===k);return `<a href="#${k}" class="${route===k?"on":""}"><span class="ic">${ic(n[2])}</span>${k==="benevoles"&&!isStaff()?"Planning":n[1]}</a>`}).join("")+
     `<a href="#plus" class="${!tabs.includes(route)?"on":""}"><span class="ic">${ic("more")}</span>Plus</a>`;
+  $("#inboxTop").innerHTML=inboxBtn();
   $("#ttl").textContent=route==="accueil"?(cur?cur.name:"Dragon Ball Day"):lab;
   render();
 }
-window.addEventListener("hashchange",()=>{UI.q="";UI.filter="";nav();window.scrollTo(0,0)});
+window.addEventListener("hashchange",()=>{UI.q="";UI.filter="";UI.chat="";nav();window.scrollTo(0,0)});
 const tabsShown=()=>TAB.filter(k=>navItems().find(n=>n[0]===k)).slice(0,3);
 
 let rT;function scheduleRender(){cancelAnimationFrame(rT);rT=requestAnimationFrame(nav)}
@@ -41,7 +42,9 @@ function render(){
   if(!welcomeShown&&MODE==="cloud"&&ME.welcomed===false){welcomeShown=true;setTimeout(()=>profileSheet(true),300)}
   moveGuestFees();
   const a=document.activeElement,aid=a&&a.id,sel=a&&a.selectionStart;
+  const cl=$("#chatList"),keep=cl?{id:UI.chat,top:cl.scrollTop,bottom:cl.scrollHeight-cl.scrollTop-cl.clientHeight<60}:null;
   $("#main").innerHTML=(VIEWS[route]||VIEWS.accueil)();
+  chatAfterRender(keep);
   if(aid){const el=document.getElementById(aid);if(el&&el!==a&&!$("#sheetRoot").contains(el)){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
 }
 VIEWS.plus=()=>{const xs=navItems().filter(n=>!tabsShown().includes(n[0]));return head("Plus","")+`<div class="morelist">${xs.map(([k,l,i,,g],j)=>(g&&g!==(xs[j-1]||[])[4]?`<div class="grp label">${g}</div>`:"")+`<a href="#${k}">${ic(i)}${l}</a>`).join("")}</div>
@@ -78,7 +81,10 @@ const ACT={
   toggleTask:el=>{const t=get("tasks",el.dataset.id);if(!t)return;const done=t.status!=="Fait";put("tasks",{...t,status:done?"Fait":"À faire",doneAt:done?today():null});if(done)toast("Bien joué ! Une tâche de moins.","trunks")},
   pickEdition:el=>{pickEdition(el.dataset.id);toast("Édition affichée : "+get("editions",el.dataset.id).name)},
   newEdition2027:()=>recordSheet("editions",null,EDITION_2027),
-  installApp:()=>installApp(),openGame:()=>openGame(),installLater:()=>{ls("dbday-install","off");render()},
+  installApp:()=>installApp(),openGame:()=>openGame(),
+  chatHome:()=>{UI.chat="";if(route==="tchat")render()},chatNew:()=>threadSheet(),chatOpen:el=>{UI.chat=el.dataset.id;UI.draft="";render();window.scrollTo(0,0)},chatBack:()=>{UI.chat="";render()},
+  chatEdit:el=>threadSheet(el.dataset.id),chatDelete:el=>chatDelete(el.dataset.id),chatNotif:()=>chatNotifPerm(),
+  chatAll:el=>el.closest("form").querySelectorAll("input[name=members]").forEach(c=>c.checked=true),installLater:()=>{ls("dbday-install","off");render()},
   editProfile:()=>profileSheet(false),
   copyLink:()=>{const v=APP_URL();(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("Lien copié. Envoie-le à qui tu veux.","goku"),()=>toast(v))},
   showInvite:el=>showInvite(el.dataset.id),
@@ -108,7 +114,7 @@ document.addEventListener("click",e=>{
   ACT[a](el,e);
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet()});
-document.addEventListener("input",e=>{if(e.target.dataset.input==="search"){UI.q=e.target.value;render()}});
+document.addEventListener("input",e=>{if(e.target.dataset.input==="search"){UI.q=e.target.value;render()}if(e.target.dataset.input==="chatDraft")UI.draft=e.target.value});
 document.addEventListener("change",e=>{
   const t=e.target,c=t.dataset.change;
   if(t.form&&t.name)t.form.querySelectorAll(`[data-show-k="${t.name}"]`).forEach(x=>{x.hidden=t.value!==x.dataset.showV});
@@ -128,6 +134,8 @@ document.addEventListener("submit",e=>{
   if(kind==="member"&&isAdmin())saveMember(f);
   if(kind==="profile"&&MODE==="cloud")saveProfile(f);
   if(kind==="settings"&&isAdmin()){const d=Object.fromEntries(new FormData(f));putCfg({assoName:d.assoName.trim(),assoAddress:d.assoAddress.trim(),website:d.website.trim(),memberFee:+d.memberFee||0});toast("Réglages enregistrés.","bulma")}
+  if(kind==="chatSend")chatSend(f);
+  if(kind==="chatThread")saveThread(f);
   if(kind==="ticketImport"&&canWrite("ticketing"))saveTicketImport(f);
   if(kind==="volImport"&&canWrite("volunteers"))saveVolImport(f);
   if(kind==="ticketManual"&&canWrite("ticketing"))saveTicketManual(f);
@@ -139,4 +147,4 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
   navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!done){done=true;location.reload()}});
   navigator.serviceWorker.register("sw.js").then(r=>r.update()).catch(()=>{});
 }
-initStore();
+initStore().then(chatStart);
