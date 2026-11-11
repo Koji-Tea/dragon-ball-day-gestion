@@ -26,9 +26,9 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if hasProfile() || (signedIn() && uid == request.auth.uid);
       allow write: if isAdmin();
-      // Chacun peut changer son pseudo (et marquer l'accueil comme vu), rien d'autre.
+      // Chacun peut changer son pseudo, marquer l'accueil comme vu et noter sa visite, rien d'autre.
       allow update: if signedIn() && uid == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'welcomed']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'welcomed', 'lastSeen', 'joinedAt']);
       allow create: if signedIn() && uid == request.auth.uid
         && !exists(/databases/$(database)/documents/config/setup)
         && request.resource.data.role == 'admin';

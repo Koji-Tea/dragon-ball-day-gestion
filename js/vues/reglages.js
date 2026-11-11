@@ -1,13 +1,18 @@
 "use strict";
 /* ---------- Réglages : association, équipe et rôles, sauvegardes ---------- */
+// « aujourd'hui », « hier », « il y a 5 jours » ou la date.
+const seenAgo=iso=>{const d=Math.floor((Date.now()-Date.parse(iso))/864e5);return d<=0?"aujourd’hui":d===1?"hier":d<30?`il y a ${d} jours`:"le "+fDate(iso.slice(0,10))};
 function teamCard(){
   if(MODE!=="cloud")return `<div class="card"><h2>Équipe et rôles</h2><p class="small muted" style="margin:0">Disponible dès que l’application est reliée à Firebase : chaque membre aura alors son propre compte et son rôle. Pour l’instant, les données restent sur cet appareil.</p></div>`;
   const members=[...TEAM.values()].sort((a,b)=>(a.name||a.email).localeCompare(b.name||b.email,"fr"));
   const reqs=[...REQUESTS.values()].filter(r=>!TEAM.has(r.uid));
-  return `<div class="card"><div class="card-head"><h2>Équipe et rôles</h2><button class="btn primary sm" data-act="newMember">${ic("plus")}Ajouter une personne</button></div>
+  const joined=members.filter(m=>m.welcomed!==false),waiting=members.length-joined.length;
+  return `<div class="card"><div class="card-head"><h2>Inscrits et rôles</h2><button class="btn primary sm" data-act="newMember">${ic("plus")}Ajouter une personne</button></div>
   <div class="row" style="margin-bottom:10px"><span class="small grow">Adresse de l’app : <b>${esc(APP_URL().replace(/^https?:\/\//,"").replace(/\/$/,""))}</b></span><button class="btn sm" data-act="copyLink">${ic("link")}Copier le lien</button></div>
   ${reqs.length?`<div class="banner" style="margin-bottom:10px"><img alt="" src="${IMG.piccolo}"><div class="grow small"><b>${plural(reqs.length,"personne attend","personnes attendent")} un rôle</b>${reqs.map(r=>`<div class="row" style="margin-top:6px"><span class="grow">${esc(r.email)}</span><button class="btn sm" data-act="grantRequest" data-id="${r.uid}">Donner un rôle</button></div>`).join("")}</div></div>`:""}
-  <div class="list">${members.map(m=>`<div class="item click" data-act="editMember" data-id="${m.uid}"><span class="avatar">${esc(initials(m.name||m.email))}</span><div class="main"><b>${esc(m.name||m.email)}${m.uid===ME.uid?" (toi)":""}</b><span class="tiny muted">${esc(m.email)}${m.role==="responsable"?" · "+((m.modules||[]).length?"":"aucun menu")+esc(m.modules.map(k=>(DELEGABLE.find(d=>d[0]===k)||[k,k])[1]).join(", ")):""}</span></div><span class="pill ${m.role==="admin"?"bad":m.role==="benevole"?"neutral":"info"}">${esc(ROLES[m.role]?.l||m.role)}</span></div>`).join("")}</div>
+  <p class="small" style="margin:0 0 8px"><b>${plural(joined.length,"personne inscrite","personnes inscrites")}</b>${waiting?` · <span style="color:var(--warn);font-weight:800">${plural(waiting,"invitation","invitations")} pas encore acceptée${waiting>1?"s":""}</span>`:""}${reqs.length?` · ${plural(reqs.length,"demande")} en attente`:""}</p>
+  <div class="list">${members.map(m=>`<div class="item click" data-act="editMember" data-id="${m.uid}"><span class="avatar">${esc(initials(m.name||m.email))}</span><div class="main"><b>${esc(m.name||m.email)}${m.uid===ME.uid?" (toi)":""}</b><span class="tiny muted">${esc(m.email)}${m.role==="responsable"?" · "+((m.modules||[]).length?"":"aucun menu")+esc(m.modules.map(k=>(DELEGABLE.find(d=>d[0]===k)||[k,k])[1]).join(", ")):""}</span>
+    <span class="tiny" style="font-weight:700;color:${m.welcomed===false?"var(--warn)":"var(--muted)"}">${m.welcomed===false?"Invitation envoyée, pas encore connecté·e":[m.joinedAt?"inscrit·e le "+fDate(m.joinedAt.slice(0,10)):"inscrit·e",m.uid===ME.uid?"":m.lastSeen?"dernière visite "+seenAgo(m.lastSeen):""].filter(Boolean).join(" · ")}</span></div><span class="pill ${m.role==="admin"?"bad":m.role==="benevole"?"neutral":"info"}">${esc(ROLES[m.role]?.l||m.role)}</span></div>`).join("")}</div>
   <details style="margin-top:12px"><summary class="small" style="cursor:pointer;font-weight:800">Qui peut faire quoi ?</summary><dl class="kv small" style="margin-top:8px">${Object.entries(ROLES).map(([k,r])=>`<dt>${esc(r.l)}</dt><dd>${esc(r.d)}</dd>`).join("")}</dl></details></div>`;
 }
 function memberSheet(uidM,preset){
