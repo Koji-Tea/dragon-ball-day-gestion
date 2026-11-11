@@ -169,6 +169,9 @@ async function connect(){
     }
   }
   ME={uid:user.uid,email:user.email,...prof,modules:prof.modules||[]};
+  // Date d'inscription (première connexion) et dernière visite, pour la liste des inscrits dans Réglages (au plus une écriture par heure).
+  {const now=new Date().toISOString(),seen=prof.lastSeen||"";
+   if(!prof.joinedAt||!seen||Date.parse(now)-Date.parse(seen)>3600e3)profRef.update({lastSeen:now,...(prof.joinedAt?{}:{joinedAt:now})}).catch(()=>{})}
   if(invited)history.replaceState(null,"",location.pathname+location.hash);
   // Si un·e admin change ce rôle pendant que l'app est ouverte, on recharge pour appliquer les nouveaux droits.
   profRef.onSnapshot(s=>{if(s.metadata.fromCache||s.metadata.hasPendingWrites)return;if(!s.exists){location.reload();return}const p=s.data();if(p.role!==ME.role||String(p.modules||[])!==String(ME.modules)){location.reload();return}ME={...ME,name:p.name};changed()},()=>{});
